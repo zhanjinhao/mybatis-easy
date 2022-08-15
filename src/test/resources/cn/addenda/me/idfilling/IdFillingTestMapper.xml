@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.addenda.me.idfilling.IdFillingTestMapper">
+    <resultMap id="tCourse" type="cn.addenda.me.pojo.TCourse">
+        <id property="courseId" column="course_id"/>
+    </resultMap>
+
+    <insert id="testInsert">
+        insert into t_course(course_id, course_name)
+        values (#{tCourse.courseId}, #{tCourse.courseName})
+    </insert>
+
+    <insert id="testInsertBatch">
+        insert into t_course(course_id, course_name)
+        values
+        <foreach collection="tCourses" item="item" separator=",">
+            (#{item.courseId}, #{item.courseName})
+        </foreach>
+    </insert>
+
+</mapper>
