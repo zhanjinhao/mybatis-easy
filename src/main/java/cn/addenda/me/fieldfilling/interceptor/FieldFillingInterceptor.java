@@ -6,6 +6,7 @@ import cn.addenda.me.fieldfilling.FiledFillingException;
 import cn.addenda.me.fieldfilling.annotation.DMLFieldFilling;
 import cn.addenda.me.fieldfilling.annotation.DQLFieldFilling;
 import cn.addenda.me.fieldfilling.sql.SqlConvertor;
+import cn.addenda.me.logicaldeletion.sql.LogicalDeletionConvertor;
 import cn.addenda.me.utils.MeAnnotationUtil;
 import cn.addenda.me.utils.MybatisUtil;
 import cn.addenda.ro.grammar.ast.expression.Curd;
@@ -17,18 +18,13 @@ import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.mapping.BoundSql;
 import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.mapping.SqlCommandType;
-import org.apache.ibatis.mapping.SqlSource;
 import org.apache.ibatis.plugin.*;
-import org.apache.ibatis.reflection.MetaObject;
-import org.apache.ibatis.reflection.SystemMetaObject;
 import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -78,7 +74,7 @@ public class FieldFillingInterceptor implements Interceptor {
         String newSql = processSql(oldSql, ms, MybatisUtil.isFinallySimpleExecutor(executor));
 
         if (!oldSql.replaceAll("\\s+", "").equals(newSql.replaceAll("\\s+", ""))) {
-            resetSql2Invocation(invocation, newSql);
+            MybatisUtil.replaceSql(invocation, newSql);
         }
         return invocation.proceed();
     }
@@ -118,7 +114,7 @@ public class FieldFillingInterceptor implements Interceptor {
         if (DMLFieldFilling == null) {
             return sql;
         }
-        String deleteLogically = SqlConvertor.deleteLogically(sql);
+        String deleteLogically = LogicalDeletionConvertor.deleteLogically(sql);
         return processUpdate(deleteLogically, DMLFieldFilling, clearCache);
     }
 
@@ -180,24 +176,24 @@ public class FieldFillingInterceptor implements Interceptor {
             return sql;
         }
         if (DQLFieldFilling.allTableNameAvailable()) {
-            return SqlConvertor.selectAddComparison(sql);
+            return LogicalDeletionConvertor.selectLogically(sql);
         }
 
         String availableTableNames = DQLFieldFilling.availableTableNames();
         boolean independent = DQLFieldFilling.independent();
         if (independent) {
             if (availableTableNames == null || availableTableNames.length() == 0) {
-                return SqlConvertor.selectAddComparison(sql, new HashSet<>());
+                return LogicalDeletionConvertor.selectLogically(sql, new HashSet<>());
             }
             Set<String> collect = Arrays.stream(availableTableNames.split(",")).collect(Collectors.toSet());
-            return SqlConvertor.selectAddComparison(sql, collect);
+            return LogicalDeletionConvertor.selectLogically(sql, collect);
         } else {
             if (availableTableNames == null || availableTableNames.length() == 0) {
-                return SqlConvertor.selectAddComparison(sql, globalAvailableTableNameSet);
+                return LogicalDeletionConvertor.selectLogically(sql, globalAvailableTableNameSet);
             }
             Set<String> collect = Arrays.stream(availableTableNames.split(",")).collect(Collectors.toSet());
             globalAvailableTableNameSet.addAll(collect);
-            return SqlConvertor.selectAddComparison(sql, globalAvailableTableNameSet);
+            return LogicalDeletionConvertor.selectLogically(sql, globalAvailableTableNameSet);
         }
     }
 
@@ -245,68 +241,6 @@ public class FieldFillingInterceptor implements Interceptor {
         return newInstance(clazzName);
     }
 
-    private static class BoundSqlSqlSource implements SqlSource {
 
-        private final BoundSql boundSql;
-
-        public BoundSqlSqlSource(BoundSql boundSql) {
-            this.boundSql = boundSql;
-        }
-
-        public BoundSql getBoundSql(Object parameterObject) {
-            return boundSql;
-        }
-    }
-
-    private void resetSql2Invocation(Invocation invocation, String sql) throws SQLException {
-        final Object[] args = invocation.getArgs();
-        MappedStatement statement = (MappedStatement) args[0];
-        Object parameterObject = args[1];
-        BoundSql boundSql = statement.getBoundSql(parameterObject);
-        MappedStatement newStatement = newMappedStatement(statement, new BoundSqlSqlSource(boundSql));
-        MetaObject msObject = SystemMetaObject.forObject(newStatement);
-        msObject.setValue("sqlSource.boundSql.sql", sql);
-        args[0] = newStatement;
-
-        // 如果参数个数为6，还需要处理 BoundSql 对象
-        if (6 == args.length) {
-            BoundSql boundSqlArg = (BoundSql) args[5];
-            // 该对象没有提供对sql属性的set方法，只能通过反射进行修改
-            Class<? extends BoundSql> aClass = boundSql.getClass();
-            try {
-                Field field = aClass.getDeclaredField("sql");
-                field.setAccessible(true);
-                field.set(boundSqlArg, sql);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    private MappedStatement newMappedStatement(MappedStatement ms, SqlSource newSqlSource) {
-        MappedStatement.Builder builder =
-                new MappedStatement.Builder(ms.getConfiguration(), ms.getId(), newSqlSource, ms.getSqlCommandType());
-        builder.resource(ms.getResource());
-        builder.fetchSize(ms.getFetchSize());
-        builder.statementType(ms.getStatementType());
-        builder.keyGenerator(ms.getKeyGenerator());
-        if (ms.getKeyProperties() != null && ms.getKeyProperties().length != 0) {
-            StringBuilder keyProperties = new StringBuilder();
-            for (String keyProperty : ms.getKeyProperties()) {
-                keyProperties.append(keyProperty).append(",");
-            }
-            keyProperties.delete(keyProperties.length() - 1, keyProperties.length());
-            builder.keyProperty(keyProperties.toString());
-        }
-        builder.timeout(ms.getTimeout());
-        builder.parameterMap(ms.getParameterMap());
-        builder.resultMaps(ms.getResultMaps());
-        builder.resultSetType(ms.getResultSetType());
-        builder.cache(ms.getCache());
-        builder.flushCacheRequired(ms.isFlushCacheRequired());
-        builder.useCache(ms.isUseCache());
-
-        return builder.build();
-    }
 
 }

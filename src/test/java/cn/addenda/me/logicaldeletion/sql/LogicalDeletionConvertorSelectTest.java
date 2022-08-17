@@ -1,6 +1,4 @@
-package cn.addenda.me.fieldfilling;
-
-import cn.addenda.me.fieldfilling.sql.SqlConvertor;
+package cn.addenda.me.logicaldeletion.sql;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -10,27 +8,27 @@ import java.util.Set;
  * @author addenda
  * @datetime 2022/8/9 18:24
  */
-public class SqlConvertorSelectAddDeleteTest {
+public class LogicalDeletionConvertorSelectTest {
 
     static String[] sqls = new String[]{
 
-//            "select a, b"
-//                    + "  from tab2 t left join tab3 on t.c = tab3.c and t.d = t.c, (select * from tab5) t5\n"
-//                    + " where t.m = ?\n"
-//                    + "   and exists (select 1\n"
-//                    + "                 from tab4 t4\n"
-//                    + "                where t1.n = t4.n)\n"
-//                    + "   and t.tm >= '2016-11-11'",
+            "select a, b"
+                    + "  from tab2 t left join tab3 on t.c = tab3.c and t.d = t.c, (select * from tab5) t5\n"
+                    + " where t.m = ?\n"
+                    + "   and exists (select 1\n"
+                    + "                 from tab4 t4\n"
+                    + "                where t1.n = t4.n)\n"
+                    + "   and t.tm >= '2016-11-11'",
 
-//            "select T.FLIGHT_ID, ROUTE_TOWARDS\n"
-//                    + "from T_DISPATCH_FLIGHT_RELEASE RELEASE join\n"
-//                    + "     (select FLIGHT_ID, max(MODIFY_TM) as LATEAST_TIME\n"
-//                    + "      from T_DISPATCH_FLIGHT_RELEASE\n"
-//                    + "      where DELETE_FLAG = 'N'\n"
-//                    + "        and FLIGHT_ID in (100838874, 100813825)\n"
-//                    + "      group by FLIGHT_ID) T on RELEASE.ID = T.RID\n"
-//                    + "where RELEASE.FLIGHT_ID = T.FLIGHT_ID\n"
-//                    + " and RELEASE.MODIFY_TM = T.LATEAST_TIME order by RELEASE.CREATE_TIME",
+            "select T.FLIGHT_ID, ROUTE_TOWARDS\n"
+                    + "from T_DISPATCH_FLIGHT_RELEASE RELEASE join\n"
+                    + "     (select FLIGHT_ID, max(MODIFY_TM) as LATEAST_TIME\n"
+                    + "      from T_DISPATCH_FLIGHT_RELEASE\n"
+                    + "      where DELETE_FLAG = 'N'\n"
+                    + "        and FLIGHT_ID in (100838874, 100813825)\n"
+                    + "      group by FLIGHT_ID) T on RELEASE.ID = T.RID\n"
+                    + "where RELEASE.FLIGHT_ID = T.FLIGHT_ID\n"
+                    + " and RELEASE.MODIFY_TM = T.LATEAST_TIME order by RELEASE.CREATE_TIME",
 
             "select ts_user.*, ts_role.create_time, ts_role.create_user from ts_user join ts_role on ts_user.user_id = ts_role.create_user " +
                     "where (select c.a from (select 1 as a from dual) c) > ts_role.a and (select c.a from (select true as a from dual) c) ",
@@ -224,7 +222,7 @@ public class SqlConvertorSelectAddDeleteTest {
 
     private static void test() {
         for (int i = 0; i < sqls.length; i++) {
-            System.out.println(SqlConvertor.selectAddComparison(sqls[i]));
+            System.out.println(LogicalDeletionConvertor.selectLogically(sqls[i]));
         }
     }
 
@@ -235,7 +233,7 @@ public class SqlConvertorSelectAddDeleteTest {
                         "from (select * from A) a left join B b on a.id = b.aid " +
                         "where a.id in (select aid from c)";
 
-        System.out.println(SqlConvertor.selectAddComparison(sql, asSet("B")));
+        System.out.println(LogicalDeletionConvertor.selectLogically(sql, asSet("B")));
     }
 
 
@@ -254,7 +252,7 @@ public class SqlConvertorSelectAddDeleteTest {
                 + "      and (ts_role.ROLE_NAME is null or ts_role.ROLE_NAME like concat('%', #{roleName,jdbcType=VARCHAR}, '%'))\n"
                 + "      group by ts_group.id";
 
-        System.out.println(SqlConvertor.selectAddComparison(sql, asSet("ts_group_role", "ts_group")));
+        System.out.println(LogicalDeletionConvertor.selectLogically(sql, asSet("ts_group_role", "ts_group")));
 
         /**
          * correct result:
