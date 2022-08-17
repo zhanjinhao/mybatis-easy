@@ -61,16 +61,12 @@ public class IdFillingInterceptor implements Interceptor {
         } else if (parameterObject instanceof Map) {
             Map<?, ?> map = (Map<?, ?>) parameterObject;
             Set<? extends Map.Entry<?, ?>> entries = map.entrySet();
-            Set<Integer> injectedHashCode = new HashSet<>();
             for (Map.Entry<?, ?> next : entries) {
                 Object value = next.getValue();
-                if (!injectedHashCode.contains(value.hashCode())) {
-                    if (value instanceof Collection) {
-                        injectCollection((Collection<?>) value, idScopeController);
-                    } else {
-                        injectPojo(value, idScopeController);
-                    }
-                    injectedHashCode.add(value.hashCode());
+                if (value instanceof Collection) {
+                    injectCollection((Collection<?>) value, idScopeController);
+                } else {
+                    injectPojo(value, idScopeController);
                 }
             }
         } else {
