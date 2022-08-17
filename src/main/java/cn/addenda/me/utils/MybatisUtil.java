@@ -4,15 +4,10 @@ import org.apache.ibatis.executor.BatchExecutor;
 import org.apache.ibatis.executor.CachingExecutor;
 import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.executor.SimpleExecutor;
-import org.apache.ibatis.mapping.BoundSql;
 import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.mapping.SqlSource;
-import org.apache.ibatis.plugin.Invocation;
-import org.apache.ibatis.reflection.MetaObject;
-import org.apache.ibatis.reflection.SystemMetaObject;
 
 import java.lang.reflect.Field;
-import java.sql.SQLException;
 
 /**
  * @Author ISJINHAO
@@ -72,48 +67,6 @@ public class MybatisUtil {
         builder.useCache(ms.isUseCache());
 
         return builder.build();
-    }
-
-    public static void replaceSql(Invocation invocation, String sql) throws SQLException {
-        final Object[] args = invocation.getArgs();
-        MappedStatement statement = (MappedStatement) args[0];
-        Object parameterObject = args[1];
-        BoundSql boundSql = statement.getBoundSql(parameterObject);
-//        MappedStatement newStatement = newMappedStatement(statement, new BoundSqlSqlSource(boundSql));
-        MetaObject msObject = SystemMetaObject.forObject(statement);
-        boundSqlSetSql(boundSql, sql);
-        msObject.setValue("sqlSource", new BoundSqlSqlSource(boundSql));
-//        args[0] = newStatement;
-
-        // 如果参数个数为6，还需要处理 BoundSql 对象
-        if (6 == args.length) {
-            boundSqlSetSql((BoundSql) args[5], sql);
-        }
-    }
-
-    private static void boundSqlSetSql(BoundSql boundSql, String sql) {
-        // 该对象没有提供对sql属性的set方法，只能通过反射进行修改
-        Class<? extends BoundSql> aClass = boundSql.getClass();
-        try {
-            Field field = aClass.getDeclaredField("sql");
-            field.setAccessible(true);
-            field.set(boundSql, sql);
-        } catch (Exception e) {
-            throw new MeUtilsException("替换 BoundSql.sql 失败！", e);
-        }
-    }
-
-    private static class BoundSqlSqlSource implements SqlSource {
-
-        private final BoundSql boundSql;
-
-        public BoundSqlSqlSource(BoundSql boundSql) {
-            this.boundSql = boundSql;
-        }
-
-        public BoundSql getBoundSql(Object parameterObject) {
-            return boundSql;
-        }
     }
 
 }

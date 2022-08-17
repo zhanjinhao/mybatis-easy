@@ -33,13 +33,19 @@ public class LogicalDeletionBootstrap {
 
     public static void main(String[] args) {
         testInsert();
+        testInsert();
         testSelect();
 
         testInsertBatch();
+        testInsertBatch();
         testBatchInsert();
+        testBatchInsert();
+
         testUpdate();
         testBatchUpdate();
 
+        testDelete();
+        testBatchDelete();
     }
 
     private static void testInsert() {
@@ -84,7 +90,7 @@ public class LogicalDeletionBootstrap {
     private static void testSelect() {
         try (SqlSession sqlSession = sqlSessionFactory.openSession()) {
             LogicalDeletionMapper courseMapper = sqlSession.getMapper(LogicalDeletionMapper.class);
-            final List<TCourse> list = courseMapper.testSelect("testBatchInsert1");
+            final List<TCourse> list = courseMapper.testSelect("testInsert1");
             for (TCourse tCourse : list) {
                 System.out.println(tCourse);
             }
@@ -104,16 +110,34 @@ public class LogicalDeletionBootstrap {
         try (SqlSession sqlSession = sqlSessionFactory.openSession(ExecutorType.BATCH)) {
             LogicalDeletionMapper courseMapper = sqlSession.getMapper(LogicalDeletionMapper.class);
 
-            courseMapper.testUpdate("testInsertBatch1");
-            sqlSession.flushStatements();
-
-            courseMapper.testUpdate("testInsertBatch2");
-            sqlSession.flushStatements();
-
             courseMapper.testUpdate("testBatchInsert1");
             sqlSession.flushStatements();
+
+            courseMapper.testUpdate("testBatchInsert2");
             sqlSession.commit();
         }
     }
+
+    private static void testDelete() {
+        try (SqlSession sqlSession = sqlSessionFactory.openSession()) {
+            LogicalDeletionMapper courseMapper = sqlSession.getMapper(LogicalDeletionMapper.class);
+            courseMapper.testDelete("testInsertBatch1");
+            courseMapper.testDelete("testInsertBatch2");
+            sqlSession.commit();
+        }
+    }
+
+    private static void testBatchDelete() {
+        try (SqlSession sqlSession = sqlSessionFactory.openSession(ExecutorType.BATCH)) {
+            LogicalDeletionMapper courseMapper = sqlSession.getMapper(LogicalDeletionMapper.class);
+
+            courseMapper.testDelete("testBatchInsert11");
+            sqlSession.flushStatements();
+
+            courseMapper.testDelete("testBatchInsert21");
+            sqlSession.commit();
+        }
+    }
+
 
 }

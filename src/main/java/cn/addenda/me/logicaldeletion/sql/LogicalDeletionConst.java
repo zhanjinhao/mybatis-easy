@@ -23,10 +23,10 @@ public class LogicalDeletionConst {
     public static final Token OR = new Token(TokenType.OR, "or");
 
     public static final Token DELETE_TOKEN = new Token(TokenType.IDENTIFIER, "del_fg");
-    public static final Identifier DELETE_COLUMN = new Identifier(DELETE_TOKEN);
-    public static final Comparison EQUAL_ZERO = new Comparison(DELETE_COLUMN, EQUAL, ZERO);
-    public static final Comparison EQUAL_ONE = new Comparison(DELETE_COLUMN, EQUAL, ONE);
-    public static final Comparison IS_NULL = new Comparison(DELETE_COLUMN, IS, NULL);
-    public static final Grouping EQUAL_ZERO_OR_IS_NULL = new Grouping(new Logic(EQUAL_ZERO, OR, IS_NULL));
+    public static final Identifier DELETE_COLUMN = new Identifier(DELETE_TOKEN.deepClone());
+    public static final Comparison EQUAL_ZERO = new Comparison(DELETE_COLUMN, EQUAL.deepClone(), ZERO.deepClone());
+    public static final Comparison EQUAL_ONE = new Comparison(DELETE_COLUMN, EQUAL.deepClone(), ONE.deepClone());
+    public static final Comparison IS_NULL = new Comparison(DELETE_COLUMN, IS.deepClone(), NULL.deepClone());
+    public static final Grouping EQUAL_ZERO_OR_IS_NULL = new Grouping(new Logic(EQUAL_ZERO.deepClone(), OR.deepClone(), IS_NULL.deepClone()));
 
 }

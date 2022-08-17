@@ -53,9 +53,9 @@ class SelectAddDeleteConditionVisitor implements CurdVisitor<Curd> {
         Curd deleteCondition;
         if (checkIsOuterJoinQuery(singleSelect)) {
             joinConditionAddDeleteCondition(tableSeg);
-            deleteCondition = LogicalDeletionConst.EQUAL_ZERO_OR_IS_NULL;
+            deleteCondition = LogicalDeletionConst.EQUAL_ZERO_OR_IS_NULL.deepClone();
         } else {
-            deleteCondition = LogicalDeletionConst.EQUAL_ZERO;
+            deleteCondition = LogicalDeletionConst.EQUAL_ZERO.deepClone();
         }
 
         WhereSeg whereSeg = (WhereSeg) singleSelect.getWhereSeg();
@@ -104,14 +104,14 @@ class SelectAddDeleteConditionVisitor implements CurdVisitor<Curd> {
             }
 
             if (condition == null) {
-                Curd deleteLogic = createLogic(physicalViewNameSet, userDefinedViewNameSet, LogicalDeletionConst.EQUAL_ZERO);
+                Curd deleteLogic = createLogic(physicalViewNameSet, userDefinedViewNameSet, LogicalDeletionConst.EQUAL_ZERO.deepClone());
                 if (deleteLogic != null) {
                     ReflectUtils.setFieldValue(tableSeg, "condition", deleteLogic);
                 }
             } else {
                 AstMetaData conditionAstMetaData = condition.getAstMetaData();
                 physicalViewNameSet.addAll(getConditionViewNameSet(conditionAstMetaData));
-                Curd deleteLogic = createLogic(physicalViewNameSet, userDefinedViewNameSet, LogicalDeletionConst.EQUAL_ZERO);
+                Curd deleteLogic = createLogic(physicalViewNameSet, userDefinedViewNameSet, LogicalDeletionConst.EQUAL_ZERO.deepClone());
                 if (deleteLogic != null) {
                     deleteLogic = new Logic(condition, new Token(TokenType.AND, "and"), deleteLogic);
                     ReflectUtils.setFieldValue(tableSeg, "condition", deleteLogic);

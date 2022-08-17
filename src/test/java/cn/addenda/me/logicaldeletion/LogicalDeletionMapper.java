@@ -21,6 +21,6 @@ public interface LogicalDeletionMapper {
 
     List<TCourse> testSelect(String courseName);
 
-    List<TCourse> testDelete(String courseName);
+    void testDelete(String courseName);
 
 }

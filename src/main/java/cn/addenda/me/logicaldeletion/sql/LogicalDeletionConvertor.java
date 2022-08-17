@@ -52,12 +52,12 @@ public class LogicalDeletionConvertor {
             InsertSetRep insertSetRep = (InsertSetRep) curd;
             AssignmentList assignmentList = (AssignmentList) insertSetRep.getAssignmentList();
             List<AssignmentList.Entry> entryList = assignmentList.getEntryList();
-            entryList.add(new AssignmentList.Entry(LogicalDeletionConst.DELETE_TOKEN, LogicalDeletionConst.ONE));
+            entryList.add(new AssignmentList.Entry(LogicalDeletionConst.DELETE_TOKEN, LogicalDeletionConst.ZERO.deepClone()));
         } else if (curd instanceof InsertValuesRep) {
             InsertValuesRep insertValuesRep = (InsertValuesRep) curd;
             List<List<Curd>> curdListList = insertValuesRep.getCurdListList();
             for (List<Curd> curdList : curdListList) {
-                curdList.add(LogicalDeletionConst.ONE);
+                curdList.add(LogicalDeletionConst.ZERO.deepClone());
             }
             List<Token> columnList = insertValuesRep.getColumnList();
             columnList.add(LogicalDeletionConst.DELETE_TOKEN);
@@ -81,7 +81,7 @@ public class LogicalDeletionConvertor {
         Token tableName = delete.getTableName();
         Curd whereSeg = delete.getWhereSeg();
         List<AssignmentList.Entry> entryList = new ArrayList<>();
-        entryList.add(new AssignmentList.Entry(LogicalDeletionConst.DELETE_COLUMN.getName(), LogicalDeletionConst.ONE));
+        entryList.add(new AssignmentList.Entry(LogicalDeletionConst.DELETE_COLUMN.getName(), LogicalDeletionConst.ONE.deepClone()));
         Update update = new Update(tableName, new AssignmentList(entryList), whereSeg);
         update.setDetector(UpdateAstMetaDataDetector.getInstance());
         update.reSetAstMetaData();
@@ -132,10 +132,10 @@ public class LogicalDeletionConvertor {
     public static String updateLogically(Update update) {
         WhereSeg whereSeg = (WhereSeg) update.getWhereSeg();
         if (whereSeg == null) {
-            ReflectUtils.setFieldValue(update, "whereSeg", new WhereSeg(LogicalDeletionConst.EQUAL_ONE.deepClone()));
+            ReflectUtils.setFieldValue(update, "whereSeg", new WhereSeg(LogicalDeletionConst.EQUAL_ZERO.deepClone()));
         } else {
             Curd logic = whereSeg.getLogic();
-            logic = new Logic(logic, new Token(TokenType.AND, "and"), LogicalDeletionConst.EQUAL_ONE);
+            logic = new Logic(logic, new Token(TokenType.AND, "and"), LogicalDeletionConst.EQUAL_ZERO.deepClone());
             ReflectUtils.setFieldValue(whereSeg, "logic", logic);
         }
         update.setDetector(UpdateAstMetaDataDetector.getInstance());

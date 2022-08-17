@@ -74,7 +74,7 @@ public class FieldFillingInterceptor implements Interceptor {
         String newSql = processSql(oldSql, ms, MybatisUtil.isFinallySimpleExecutor(executor));
 
         if (!oldSql.replaceAll("\\s+", "").equals(newSql.replaceAll("\\s+", ""))) {
-            MybatisUtil.replaceSql(invocation, newSql);
+//            MybatisUtil.replaceSql(invocation, newSql);
         }
         return invocation.proceed();
     }
