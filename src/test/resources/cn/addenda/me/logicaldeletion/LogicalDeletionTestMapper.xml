@@ -1,22 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="cn.addenda.me.logicaldeletion.LogicalDeletionMapper">
-    <resultMap id="tCourse" type="cn.addenda.me.pojo.TCourse">
-        <id property="courseId" column="course_id"/>
-    </resultMap>
+  <resultMap id="tCourse" type="cn.addenda.me.pojo.TCourse">
+    <id property="courseId" column="course_id"/>
+  </resultMap>
 
-    <insert id="testInsert">
-        insert into t_course(course_id, course_name)
-        values (#{tCourse.courseId}, #{tCourse.courseName})
-    </insert>
+  <insert id="testInsert">
+    insert into t_course(course_id, course_name)
+    values (#{tCourse.courseId}, #{tCourse.courseName})
+  </insert>
 
-    <insert id="testInsertBatch">
-        insert into t_course(course_id, course_name)
-        values
-        <foreach collection="tCourses" item="item" separator=",">
-            (#{item.courseId}, #{item.courseName})
-        </foreach>
-    </insert>
+  <insert id="testInsertBatch">
+    insert into t_course(course_id, course_name)
+    values
+    <foreach collection="tCourses" item="item" separator=",">
+      (#{item.courseId}, #{item.courseName})
+    </foreach>
+  </insert>
+
+  <update id="testUpdate">
+    update t_course
+    set course_name = concat(cource_name, '1')
+    where cource_name = #{courseName,jdbcType=VARCHAR}
+  </update>
+
+  <select id="testSelect" resultMap="tCourse">
+    select *
+    from t_course
+    where course_name = #{courseName,jdbcType=VARCHAR}
+  </select>
+
+  <delete id="testDelete">
+    delete
+    from t_course
+    where course_name = #{courseName,jdbcType=VARCHAR}
+  </delete>
 </mapper>

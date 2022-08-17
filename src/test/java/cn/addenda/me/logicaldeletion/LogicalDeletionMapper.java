@@ -17,4 +17,10 @@ public interface LogicalDeletionMapper {
 
     void testInsertBatch(@Param("tCourses") List<TCourse> tCourseList);
 
+    void testUpdate(String courseName);
+
+    List<TCourse> testSelect(String courseName);
+
+    List<TCourse> testDelete(String courseName);
+
 }

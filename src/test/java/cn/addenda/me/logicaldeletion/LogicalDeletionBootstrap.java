@@ -1,8 +1,8 @@
 package cn.addenda.me.logicaldeletion;
 
-import cn.addenda.me.idfilling.IdFillingTestMapper;
 import cn.addenda.me.pojo.TCourse;
 import org.apache.ibatis.io.Resources;
+import org.apache.ibatis.session.ExecutorType;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
@@ -33,15 +33,21 @@ public class LogicalDeletionBootstrap {
 
     public static void main(String[] args) {
         testInsert();
+        testSelect();
+
         testInsertBatch();
+        testBatchInsert();
+        testUpdate();
+        testBatchUpdate();
+
     }
 
     private static void testInsert() {
         SqlSession sqlSession = sqlSessionFactory.openSession();
         try {
             LogicalDeletionMapper courseMapper = sqlSession.getMapper(LogicalDeletionMapper.class);
-            courseMapper.testInsert(new TCourse("addenda1", "zhanjinhao"));
-            courseMapper.testInsert(new TCourse(null, "zhanjinhao"));
+            courseMapper.testInsert(new TCourse("addenda1", "testInsert1"));
+            courseMapper.testInsert(new TCourse(null, "testInsert2"));
             sqlSession.commit();
         } finally {
             sqlSession.close();
@@ -52,14 +58,61 @@ public class LogicalDeletionBootstrap {
         SqlSession sqlSession = sqlSessionFactory.openSession();
 
         try {
-            IdFillingTestMapper courseMapper = sqlSession.getMapper(IdFillingTestMapper.class);
+            LogicalDeletionMapper courseMapper = sqlSession.getMapper(LogicalDeletionMapper.class);
             List<TCourse> list = new ArrayList<>();
-            list.add(new TCourse(null, "zhanjinhao"));
-            list.add(new TCourse(null, "zhanjinhao"));
+            list.add(new TCourse(null, "testInsertBatch1"));
+            list.add(new TCourse(null, "testInsertBatch2"));
             courseMapper.testInsertBatch(list);
             sqlSession.commit();
         } finally {
             sqlSession.close();
+        }
+    }
+
+    private static void testBatchInsert() {
+        try (SqlSession sqlSession = sqlSessionFactory.openSession(ExecutorType.BATCH)) {
+            LogicalDeletionMapper courseMapper = sqlSession.getMapper(LogicalDeletionMapper.class);
+
+            courseMapper.testInsert(new TCourse(null, "testBatchInsert1"));
+            sqlSession.flushStatements();
+
+            courseMapper.testInsert(new TCourse(null, "testBatchInsert2"));
+            sqlSession.commit();
+        }
+    }
+
+    private static void testSelect() {
+        try (SqlSession sqlSession = sqlSessionFactory.openSession()) {
+            LogicalDeletionMapper courseMapper = sqlSession.getMapper(LogicalDeletionMapper.class);
+            final List<TCourse> list = courseMapper.testSelect("testBatchInsert1");
+            for (TCourse tCourse : list) {
+                System.out.println(tCourse);
+            }
+        }
+    }
+
+    private static void testUpdate() {
+        try (SqlSession sqlSession = sqlSessionFactory.openSession()) {
+            LogicalDeletionMapper courseMapper = sqlSession.getMapper(LogicalDeletionMapper.class);
+            courseMapper.testUpdate("testInsert1");
+            courseMapper.testUpdate("testInsert2");
+            sqlSession.commit();
+        }
+    }
+
+    private static void testBatchUpdate() {
+        try (SqlSession sqlSession = sqlSessionFactory.openSession(ExecutorType.BATCH)) {
+            LogicalDeletionMapper courseMapper = sqlSession.getMapper(LogicalDeletionMapper.class);
+
+            courseMapper.testUpdate("testInsertBatch1");
+            sqlSession.flushStatements();
+
+            courseMapper.testUpdate("testInsertBatch2");
+            sqlSession.flushStatements();
+
+            courseMapper.testUpdate("testBatchInsert1");
+            sqlSession.flushStatements();
+            sqlSession.commit();
         }
     }
 

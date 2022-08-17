@@ -30,11 +30,11 @@ import java.util.stream.Collectors;
  * @datetime 2022/8/16 21:03
  */
 @Intercepts({
-        @Signature(type = Executor.class, method = "query",
-                args = {MappedStatement.class, Object.class, RowBounds.class, ResultHandler.class, CacheKey.class, BoundSql.class}),
-        @Signature(type = Executor.class, method = "query",
-                args = {MappedStatement.class, Object.class, RowBounds.class, ResultHandler.class}),
-        @Signature(type = Executor.class, method = "update", args = {MappedStatement.class, Object.class}),
+    @Signature(type = Executor.class, method = "query",
+        args = {MappedStatement.class, Object.class, RowBounds.class, ResultHandler.class, CacheKey.class, BoundSql.class}),
+    @Signature(type = Executor.class, method = "query",
+        args = {MappedStatement.class, Object.class, RowBounds.class, ResultHandler.class}),
+    @Signature(type = Executor.class, method = "update", args = {MappedStatement.class, Object.class}),
 })
 public class LogicalDeletionInterceptor implements Interceptor {
 
@@ -60,15 +60,15 @@ public class LogicalDeletionInterceptor implements Interceptor {
 
         String newSql = processSql(oldSql, ms);
         // newSql不为空 且 新旧sql不一致 的才需要进行sql替换
-        if (newSql != null && !oldSql.replaceAll("\\s+", "").equals(newSql.replaceAll("\\s+", ""))) {
-            MybatisUtil.replaceSql(invocation, newSql);
-            try {
-                return invocation.proceed();
-            } finally {
-                MybatisUtil.replaceSql(invocation, oldSql);
-            }
+        if (newSql == null || !oldSql.replaceAll("\\s+", "").equals(newSql.replaceAll("\\s+", ""))) {
+            return invocation.proceed();
         }
-        return invocation.proceed();
+        MybatisUtil.replaceSql(invocation, newSql);
+        try {
+            return invocation.proceed();
+        } finally {
+            MybatisUtil.replaceSql(invocation, oldSql);
+        }
     }
 
     private String processSql(String sql, MappedStatement ms) {
@@ -118,16 +118,16 @@ public class LogicalDeletionInterceptor implements Interceptor {
 
     private LogicalDeletionController extractIdScopeController(String msId) {
         return logicalDeletionControllerMap.computeIfAbsent(msId,
-                s -> {
-                    int end = msId.lastIndexOf(".");
-                    try {
-                        Class<?> aClass = Class.forName(msId.substring(0, end));
-                        String methodName = msId.substring(end + 1);
-                        return MeAnnotationUtil.extractAnnotationFromMethod(aClass, methodName, LogicalDeletionController.class);
-                    } catch (ClassNotFoundException e) {
-                        throw new IdFillingException("无法找到对应的Mapper：" + msId, e);
-                    }
-                });
+            s -> {
+                int end = msId.lastIndexOf(".");
+                try {
+                    Class<?> aClass = Class.forName(msId.substring(0, end));
+                    String methodName = msId.substring(end + 1);
+                    return MeAnnotationUtil.extractAnnotationFromMethod(aClass, methodName, LogicalDeletionController.class);
+                } catch (ClassNotFoundException e) {
+                    throw new IdFillingException("无法找到对应的Mapper：" + msId, e);
+                }
+            });
     }
 
     @Override
