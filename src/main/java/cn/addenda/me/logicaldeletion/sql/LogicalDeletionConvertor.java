@@ -114,9 +114,7 @@ public class LogicalDeletionConvertor {
     }
 
     public static String selectLogically(Select select, Set<String> tableNameSet) {
-        Curd accept = select.accept(new SelectAddDeleteConditionVisitor(tableNameSet));
-        accept.reSetAstMetaData();
-        return accept.toString();
+        return select.accept(new SelectAddDeleteConditionVisitor(tableNameSet)).toString();
     }
 
     public static String updateLogically(String sql) {

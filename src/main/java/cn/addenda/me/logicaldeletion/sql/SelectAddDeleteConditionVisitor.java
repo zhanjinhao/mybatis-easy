@@ -38,6 +38,7 @@ class SelectAddDeleteConditionVisitor implements CurdVisitor<Curd> {
         if (rightCurd != null) {
             rightCurd.accept(this);
         }
+        select.reSetAstMetaData();
         return select;
     }
 
@@ -64,7 +65,6 @@ class SelectAddDeleteConditionVisitor implements CurdVisitor<Curd> {
             Curd deleteLogic = createLogic(physicalViewNameSet, userDefinedViewNameSet, deleteCondition);
             if (deleteLogic != null) {
                 whereSeg = new WhereSeg(deleteLogic);
-                // TODO 触发计算AstMetaData
                 ReflectUtils.setFieldValue(singleSelect, "whereSeg", whereSeg);
             }
         }
