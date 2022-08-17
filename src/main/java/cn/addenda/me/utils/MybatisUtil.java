@@ -4,8 +4,12 @@ import org.apache.ibatis.executor.BatchExecutor;
 import org.apache.ibatis.executor.CachingExecutor;
 import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.executor.SimpleExecutor;
+import org.apache.ibatis.mapping.BoundSql;
 import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.mapping.SqlSource;
+import org.apache.ibatis.plugin.Invocation;
+import org.apache.ibatis.reflection.MetaObject;
+import org.apache.ibatis.reflection.SystemMetaObject;
 
 import java.lang.reflect.Field;
 
@@ -67,6 +71,47 @@ public class MybatisUtil {
         builder.useCache(ms.isUseCache());
 
         return builder.build();
+    }
+
+    public static void replaceSql(Invocation invocation, BoundSql boundSql, SqlSource sqlSource) {
+        final Object[] args = invocation.getArgs();
+        MappedStatement statement = (MappedStatement) args[0];
+        MetaObject msObject = SystemMetaObject.forObject(statement);
+        msObject.setValue("sqlSource", sqlSource);
+
+        // 如果参数个数为6，还需要处理 BoundSql 对象
+        if (6 == args.length) {
+            args[5] = boundSql;
+        }
+    }
+
+    public static SqlSource newBoundSqlSqlSource(BoundSql boundSql) {
+        return new BoundSqlSqlSource(boundSql);
+    }
+
+    public static void boundSqlSetSql(BoundSql boundSql, String sql) {
+        // 该对象没有提供对sql属性的set方法，只能通过反射进行修改
+        Class<? extends BoundSql> aClass = boundSql.getClass();
+        try {
+            Field field = aClass.getDeclaredField("sql");
+            field.setAccessible(true);
+            field.set(boundSql, sql);
+        } catch (Exception e) {
+            throw new MeUtilsException("替换 BoundSql.sql 失败！", e);
+        }
+    }
+
+    private static class BoundSqlSqlSource implements SqlSource {
+
+        private final BoundSql boundSql;
+
+        public BoundSqlSqlSource(BoundSql boundSql) {
+            this.boundSql = boundSql;
+        }
+
+        public BoundSql getBoundSql(Object parameterObject) {
+            return boundSql;
+        }
     }
 
 }

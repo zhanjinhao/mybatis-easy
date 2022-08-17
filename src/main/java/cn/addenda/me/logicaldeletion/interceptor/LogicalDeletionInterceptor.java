@@ -1,7 +1,7 @@
 package cn.addenda.me.logicaldeletion.interceptor;
 
-import cn.addenda.me.fieldfilling.FiledFillingException;
 import cn.addenda.me.idfilling.IdFillingException;
+import cn.addenda.me.logicaldeletion.LogicalDeletionException;
 import cn.addenda.me.logicaldeletion.annotation.LogicalDeletionController;
 import cn.addenda.me.logicaldeletion.sql.LogicalDeletionConvertor;
 import cn.addenda.me.utils.MeAnnotationUtil;
@@ -70,14 +70,14 @@ public class LogicalDeletionInterceptor implements Interceptor {
         BoundSql oldBoundSqlArg = 6 == args.length ? (BoundSql) args[5] : null;
         SqlSource oldSqlSource = ms.getSqlSource();
 
-        boundSqlSetSql(boundSql, newSql);
-        SqlSource newSqlSource = newBoundSqlSqlSource(boundSql);
+        MybatisUtil.boundSqlSetSql(boundSql, newSql);
+        SqlSource newSqlSource = MybatisUtil.newBoundSqlSqlSource(boundSql);
 
-        replaceSql(invocation, boundSql, newSqlSource);
+        MybatisUtil.replaceSql(invocation, boundSql, newSqlSource);
         try {
             return invocation.proceed();
         } finally {
-            replaceSql(invocation, oldBoundSqlArg, oldSqlSource);
+            MybatisUtil.replaceSql(invocation, oldBoundSqlArg, oldSqlSource);
         }
     }
 
@@ -95,7 +95,7 @@ public class LogicalDeletionInterceptor implements Interceptor {
                 }
                 return null;
             } else {
-                throw new FiledFillingException("Mybatis SqlCommandType.INSERT 应该执行 INSERT 语句！");
+                throw new LogicalDeletionException("Mybatis SqlCommandType.INSERT 应该执行 INSERT 语句！");
             }
         } else if (SqlCommandType.UPDATE.equals(sqlCommandType)) {
             Curd parse = CurdParserFactory.createCurdParser(sql).parse();
@@ -107,7 +107,7 @@ public class LogicalDeletionInterceptor implements Interceptor {
                 }
                 return null;
             } else {
-                throw new FiledFillingException("Mybatis SqlCommandType.UPDATE 应该执行 UPDATE 语句！");
+                throw new LogicalDeletionException("Mybatis SqlCommandType.UPDATE 应该执行 UPDATE 语句！");
             }
         } else if (SqlCommandType.DELETE.equals(sqlCommandType)) {
             Curd parse = CurdParserFactory.createCurdParser(sql).parse();
@@ -119,10 +119,10 @@ public class LogicalDeletionInterceptor implements Interceptor {
                 }
                 return null;
             } else {
-                throw new FiledFillingException("Mybatis SqlCommandType.DELETE 应该执行 DELETE 语句！");
+                throw new LogicalDeletionException("Mybatis SqlCommandType.DELETE 应该执行 DELETE 语句！");
             }
         } else {
-            throw new FiledFillingException("无法识别的Mybatis SqlCommandType：" + sqlCommandType);
+            throw new LogicalDeletionException("无法识别的Mybatis SqlCommandType：" + sqlCommandType);
         }
     }
 
@@ -152,47 +152,6 @@ public class LogicalDeletionInterceptor implements Interceptor {
             return;
         }
         logicalDeletionTableNameSet.addAll(Arrays.stream(tableNameSet.split(",")).collect(Collectors.toSet()));
-    }
-
-    public static void replaceSql(Invocation invocation, BoundSql boundSql, SqlSource sqlSource) {
-        final Object[] args = invocation.getArgs();
-        MappedStatement statement = (MappedStatement) args[0];
-        MetaObject msObject = SystemMetaObject.forObject(statement);
-        msObject.setValue("sqlSource", sqlSource);
-
-        // 如果参数个数为6，还需要处理 BoundSql 对象
-        if (6 == args.length) {
-            args[5] = boundSql;
-        }
-    }
-
-    public SqlSource newBoundSqlSqlSource(BoundSql boundSql) {
-        return new BoundSqlSqlSource(boundSql);
-    }
-
-    public void boundSqlSetSql(BoundSql boundSql, String sql) {
-        // 该对象没有提供对sql属性的set方法，只能通过反射进行修改
-        Class<? extends BoundSql> aClass = boundSql.getClass();
-        try {
-            Field field = aClass.getDeclaredField("sql");
-            field.setAccessible(true);
-            field.set(boundSql, sql);
-        } catch (Exception e) {
-            throw new MeUtilsException("替换 BoundSql.sql 失败！", e);
-        }
-    }
-
-    private static class BoundSqlSqlSource implements SqlSource {
-
-        private final BoundSql boundSql;
-
-        public BoundSqlSqlSource(BoundSql boundSql) {
-            this.boundSql = boundSql;
-        }
-
-        public BoundSql getBoundSql(Object parameterObject) {
-            return boundSql;
-        }
     }
 
 }
