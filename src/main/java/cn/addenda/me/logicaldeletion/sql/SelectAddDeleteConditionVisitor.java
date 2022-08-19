@@ -1,12 +1,9 @@
 package cn.addenda.me.logicaldeletion.sql;
 
 import cn.addenda.ro.grammar.ast.AstMetaData;
-import cn.addenda.ro.grammar.ast.CurdVisitor;
-import cn.addenda.ro.grammar.ast.create.*;
-import cn.addenda.ro.grammar.ast.delete.Delete;
 import cn.addenda.ro.grammar.ast.expression.*;
 import cn.addenda.ro.grammar.ast.retrieve.*;
-import cn.addenda.ro.grammar.ast.update.Update;
+import cn.addenda.ro.grammar.ast.retrieve.visitor.SelectVisitor;
 import cn.addenda.ro.grammar.lexical.token.Token;
 import cn.addenda.ro.grammar.lexical.token.TokenType;
 import cn.addenda.ro.grammar.util.ReflectUtils;
@@ -14,7 +11,7 @@ import cn.addenda.ro.grammar.util.ReflectUtils;
 import java.util.*;
 import java.util.stream.Collectors;
 
-class SelectAddDeleteConditionVisitor implements CurdVisitor<Curd> {
+class SelectAddDeleteConditionVisitor extends SelectVisitor<Curd> {
 
     /**
      * 允许被添加 comparison 字段的表名。
@@ -259,52 +256,6 @@ class SelectAddDeleteConditionVisitor implements CurdVisitor<Curd> {
     }
 
     @Override
-    public Curd visitInsert(Insert insert) {
-        insert.getInsertRep().accept(this);
-        return null;
-    }
-
-    @Override
-    public Curd visitInsertValuesRep(InsertValuesRep insertValuesRep) {
-        return null;
-    }
-
-    @Override
-    public Curd visitInsertSetRep(InsertSetRep insertSetRep) {
-        return null;
-    }
-
-    @Override
-    public Curd visitOnDuplicateKey(OnDuplicateKey onDuplicateKey) {
-        return null;
-    }
-
-    @Override
-    public Curd visitInsertSelectRep(InsertSelectRep insertSelectRep) {
-        Curd select = insertSelectRep.getSelect();
-        select.accept(this);
-        return null;
-    }
-
-    @Override
-    public Curd visitUpdate(Update update) {
-        Curd whereSeg = update.getWhereSeg();
-        if (whereSeg != null) {
-            whereSeg.accept(this);
-        }
-        return null;
-    }
-
-    @Override
-    public Curd visitDelete(Delete delete) {
-        Curd whereSeg = delete.getWhereSeg();
-        if (whereSeg != null) {
-            whereSeg.accept(this);
-        }
-        return null;
-    }
-
-    @Override
     public Curd visitWhereSeg(WhereSeg whereSeg) {
         whereSeg.getLogic().accept(this);
         return whereSeg;
@@ -367,11 +318,6 @@ class SelectAddDeleteConditionVisitor implements CurdVisitor<Curd> {
     @Override
     public Curd visitFunction(Function function) {
         return function;
-    }
-
-    @Override
-    public Curd visitAssignmentList(AssignmentList assignmentList) {
-        return assignmentList;
     }
 
     @Override
