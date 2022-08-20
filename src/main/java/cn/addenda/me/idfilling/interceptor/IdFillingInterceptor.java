@@ -4,7 +4,7 @@ import cn.addenda.me.idfilling.IdFillingException;
 import cn.addenda.me.idfilling.annotation.IdScope;
 import cn.addenda.me.idfilling.annotation.IdScopeController;
 import cn.addenda.me.idfilling.idgenerator.IdGenerator;
-import cn.addenda.me.utils.MeAnnotationUtil;
+import cn.addenda.me.utils.MeAnnotationUtils;
 import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.plugin.Interceptor;
@@ -113,7 +113,7 @@ public class IdFillingInterceptor implements Interceptor {
         Class<?> aClass = object.getClass();
         String className = aClass.getName();
         return PARAMETER_ID_SCOPE_MAP.computeIfAbsent
-                (className, s -> MeAnnotationUtil.extractAnnotationFromClass(aClass, IdScope.class));
+                (className, s -> MeAnnotationUtils.extractAnnotationFromClass(aClass, IdScope.class));
     }
 
 
@@ -160,7 +160,7 @@ public class IdFillingInterceptor implements Interceptor {
                     try {
                         Class<?> aClass = Class.forName(msId.substring(0, end));
                         String methodName = msId.substring(end + 1);
-                        return MeAnnotationUtil.extractAnnotationFromMethod(aClass, methodName, IdScopeController.class);
+                        return MeAnnotationUtils.extractAnnotationFromMethod(aClass, methodName, IdScopeController.class);
                     } catch (ClassNotFoundException e) {
                         throw new IdFillingException("无法找到对应的Mapper：" + msId, e);
                     }

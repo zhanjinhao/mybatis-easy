@@ -6,8 +6,8 @@ import cn.addenda.me.fieldfilling.FieldFillingException;
 import cn.addenda.me.fieldfilling.annotation.DMLFieldFilling;
 import cn.addenda.me.fieldfilling.annotation.DQLFieldFilling;
 import cn.addenda.me.fieldfilling.sql.FieldFillingConvertor;
-import cn.addenda.me.utils.MeAnnotationUtil;
-import cn.addenda.me.utils.MybatisUtil;
+import cn.addenda.me.utils.MeAnnotationUtils;
+import cn.addenda.me.utils.MybatisUtils;
 import cn.addenda.ro.grammar.ast.CurdParserFactory;
 import cn.addenda.ro.grammar.ast.create.Insert;
 import cn.addenda.ro.grammar.ast.expression.Curd;
@@ -69,7 +69,7 @@ public class FieldFillingInterceptor implements Interceptor {
             return invocation.proceed();
         }
 
-        MybatisUtil.executorInterceptorReplaceSql(invocation, boundSql, newSql);
+        MybatisUtils.executorInterceptorReplaceSql(invocation, boundSql, newSql);
         return invocation.proceed();
     }
 
@@ -120,7 +120,7 @@ public class FieldFillingInterceptor implements Interceptor {
         try {
             Class<?> aClass = Class.forName(msId.substring(0, end));
             String methodName = msId.substring(end + 1);
-            return MeAnnotationUtil.extractAnnotationFromMethod(aClass, methodName, tClazz);
+            return MeAnnotationUtils.extractAnnotationFromMethod(aClass, methodName, tClazz);
         } catch (ClassNotFoundException e) {
             throw new FieldFillingException("无法找到对应的Mapper：" + msId, e);
         }

@@ -4,8 +4,8 @@ import cn.addenda.me.idfilling.IdFillingException;
 import cn.addenda.me.logicaldeletion.LogicalDeletionException;
 import cn.addenda.me.logicaldeletion.annotation.LogicalDeletionController;
 import cn.addenda.me.logicaldeletion.sql.LogicalDeletionConvertor;
-import cn.addenda.me.utils.MeAnnotationUtil;
-import cn.addenda.me.utils.MybatisUtil;
+import cn.addenda.me.utils.MeAnnotationUtils;
+import cn.addenda.me.utils.MybatisUtils;
 import cn.addenda.ro.grammar.ast.CurdParserFactory;
 import cn.addenda.ro.grammar.ast.create.Insert;
 import cn.addenda.ro.grammar.ast.delete.Delete;
@@ -62,7 +62,7 @@ public class LogicalDeletionInterceptor implements Interceptor {
             return invocation.proceed();
         }
 
-        MybatisUtil.executorInterceptorReplaceSql(invocation, boundSql, newSql);
+        MybatisUtils.executorInterceptorReplaceSql(invocation, boundSql, newSql);
         return invocation.proceed();
     }
 
@@ -118,7 +118,7 @@ public class LogicalDeletionInterceptor implements Interceptor {
                     try {
                         Class<?> aClass = Class.forName(msId.substring(0, end));
                         String methodName = msId.substring(end + 1);
-                        return MeAnnotationUtil.extractAnnotationFromMethod(aClass, methodName, LogicalDeletionController.class);
+                        return MeAnnotationUtils.extractAnnotationFromMethod(aClass, methodName, LogicalDeletionController.class);
                     } catch (ClassNotFoundException e) {
                         throw new IdFillingException("无法找到对应的Mapper：" + msId, e);
                     }

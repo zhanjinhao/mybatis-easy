@@ -7,9 +7,9 @@ import java.lang.reflect.Method;
  * @author addenda
  * @datetime 2022/8/7 22:35
  */
-public class MeAnnotationUtil {
+public class MeAnnotationUtils {
 
-    private MeAnnotationUtil() {
+    private MeAnnotationUtils() {
     }
 
     public static <T extends Annotation> T extractAnnotationFromMethod(Class<?> aClass, String methodName, Class<T> annotationClass) {

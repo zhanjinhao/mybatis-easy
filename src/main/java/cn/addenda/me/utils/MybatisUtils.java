@@ -1,5 +1,6 @@
 package cn.addenda.me.utils;
 
+import cn.addenda.me.MyBatisEasyException;
 import org.apache.ibatis.executor.BatchExecutor;
 import org.apache.ibatis.executor.CachingExecutor;
 import org.apache.ibatis.executor.Executor;
@@ -17,9 +18,9 @@ import java.lang.reflect.Field;
  * @Author ISJINHAO
  * @Date 2022/4/15 18:28
  */
-public class MybatisUtil {
+public class MybatisUtils {
 
-    private MybatisUtil() {
+    private MybatisUtils() {
     }
 
     public static boolean isFinallySimpleExecutor(Executor executor) {
@@ -36,10 +37,10 @@ public class MybatisUtil {
                 Object o = delegate.get(executor);
                 return isFinallySimpleExecutor((Executor) o);
             } catch (IllegalAccessException | NoSuchFieldException e) {
-                throw new MeUtilsException("无法从 CachingExecutor 中获取到 delegate。当前Executor: " + executor.getClass() + ".", e);
+                throw new MyBatisEasyException("无法从 CachingExecutor 中获取到 delegate。当前Executor: " + executor.getClass() + ".", e);
             }
         }
-        throw new MeUtilsException("只支持 SimpleExecutor、BatchExecutor和CachingExecutor! 当前是：" + executor.getClass() + ".");
+        throw new MyBatisEasyException("只支持 SimpleExecutor、BatchExecutor和CachingExecutor! 当前是：" + executor.getClass() + ".");
     }
 
     public static MappedStatement cloneMappedStatement(MappedStatement ms) {
@@ -84,8 +85,8 @@ public class MybatisUtil {
      * @param newSql
      */
     public static void executorInterceptorReplaceSql(Invocation invocation, BoundSql boundSql, String newSql) {
-        MybatisUtil.boundSqlSetSql(boundSql, newSql);
-        SqlSource newSqlSource = MybatisUtil.newBoundSqlSqlSource(boundSql);
+        MybatisUtils.boundSqlSetSql(boundSql, newSql);
+        SqlSource newSqlSource = MybatisUtils.newBoundSqlSqlSource(boundSql);
 
         final Object[] args = invocation.getArgs();
         // Interceptor 拦截到的 ms 是同一个对象，
@@ -113,7 +114,7 @@ public class MybatisUtil {
             field.setAccessible(true);
             field.set(boundSql, sql);
         } catch (Exception e) {
-            throw new MeUtilsException("替换 BoundSql.sql 失败！", e);
+            throw new MyBatisEasyException("替换 BoundSql.sql 失败！", e);
         }
     }
 

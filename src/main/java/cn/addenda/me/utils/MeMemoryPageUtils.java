@@ -1,5 +1,6 @@
 package cn.addenda.me.utils;
 
+import cn.addenda.me.MyBatisEasyException;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageInfo;
 
@@ -120,7 +121,7 @@ public class MeMemoryPageUtils {
 
     private static <T> String comparatorKey(Map<String, SqlOrder> orderRulesMap, T t) {
         if (t == null) {
-            throw new MeUtilsException("please make sure the parameter 't' is not null");
+            throw new MyBatisEasyException("please make sure the parameter 't' is not null");
         }
         Set<Entry<String, SqlOrder>> entries = orderRulesMap.entrySet();
         StringBuilder sb = new StringBuilder();
@@ -163,7 +164,7 @@ public class MeMemoryPageUtils {
                     }
                 }
             } catch (Exception e) {
-                throw new MeUtilsException("error occurred on createComparator()", e);
+                throw new MyBatisEasyException("error occurred on createComparator()", e);
             }
             return 0;
         };
@@ -175,7 +176,7 @@ public class MeMemoryPageUtils {
         Set<Entry<String, SqlOrder>> entries = orderRulesMap.entrySet();
         for (Entry<String, SqlOrder> entry : entries) {
             if (!declaredFieldNames.contains(entry.getKey())) {
-                throw new MeUtilsException("排序字段不是集合属性。集合属性：" + Arrays.deepToString(declaredFields) + ", 当前字段：" + entry.getKey());
+                throw new MyBatisEasyException("排序字段不是集合属性。集合属性：" + Arrays.deepToString(declaredFields) + ", 当前字段：" + entry.getKey());
             }
         }
     }
@@ -220,7 +221,7 @@ public class MeMemoryPageUtils {
             try {
                 return clazz.getDeclaredField(property);
             } catch (NoSuchFieldException e) {
-                throw new MeUtilsException("找不到对应的字段，字段名：" + property, e);
+                throw new MyBatisEasyException("找不到对应的字段，字段名：" + property, e);
             }
         });
         if (field == null) {
@@ -236,7 +237,7 @@ public class MeMemoryPageUtils {
         try {
             compareTo = Comparable.class.getMethod("compareTo", Object.class);
         } catch (NoSuchMethodException e) {
-            throw new MeUtilsException("当前类加载器无法找到java.lang.Comparable#compareTo", e);
+            throw new MyBatisEasyException("当前类加载器无法找到java.lang.Comparable#compareTo", e);
         }
     }
 
@@ -253,10 +254,10 @@ public class MeMemoryPageUtils {
         Class<?> leftClass = o1.getClass();
         Class<?> rightClass = o2.getClass();
         if (!leftClass.equals(rightClass)) {
-            throw new MeUtilsException("the classes of two object need equal! but now the left is : " + leftClass + ", the right is : " + rightClass);
+            throw new MyBatisEasyException("the classes of two object need equal! but now the left is : " + leftClass + ", the right is : " + rightClass);
         }
         if (!Comparable.class.isAssignableFrom(leftClass)) {
-            throw new MeUtilsException("please make sure the field to invoke compareTo method is a subtype of Comparator");
+            throw new MyBatisEasyException("please make sure the field to invoke compareTo method is a subtype of Comparator");
         }
         return (Integer) compareTo.invoke(o1, o2);
     }
@@ -302,6 +303,5 @@ public class MeMemoryPageUtils {
     private static boolean isDigit(char c) {
         return c >= '0' && c <= '9';
     }
-
 
 }
