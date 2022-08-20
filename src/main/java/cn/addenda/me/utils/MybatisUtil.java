@@ -42,42 +42,58 @@ public class MybatisUtil {
         throw new MeUtilsException("只支持 SimpleExecutor、BatchExecutor和CachingExecutor! 当前是：" + executor.getClass() + ".");
     }
 
-    /**
-     * @param ms           旧的MappedStatement
-     * @param newSqlSource 改写后SQL的SqlSource
-     * @return
-     */
-    public static MappedStatement newMappedStatement(MappedStatement ms, SqlSource newSqlSource) {
+    public static MappedStatement cloneMappedStatement(MappedStatement ms) {
         MappedStatement.Builder builder =
-                new MappedStatement.Builder(ms.getConfiguration(), ms.getId(), newSqlSource, ms.getSqlCommandType());
+                new MappedStatement.Builder(ms.getConfiguration(), ms.getId(), ms.getSqlSource(), ms.getSqlCommandType());
         builder.resource(ms.getResource());
-        builder.fetchSize(ms.getFetchSize());
-        builder.statementType(ms.getStatementType());
-        builder.keyGenerator(ms.getKeyGenerator());
-        if (ms.getKeyProperties() != null && ms.getKeyProperties().length != 0) {
-            StringBuilder keyProperties = new StringBuilder();
-            for (String keyProperty : ms.getKeyProperties()) {
-                keyProperties.append(keyProperty).append(",");
-            }
-            keyProperties.delete(keyProperties.length() - 1, keyProperties.length());
-            builder.keyProperty(keyProperties.toString());
-        }
-        builder.timeout(ms.getTimeout());
         builder.parameterMap(ms.getParameterMap());
         builder.resultMaps(ms.getResultMaps());
+        builder.fetchSize(ms.getFetchSize());
+        builder.timeout(ms.getTimeout());
+        builder.statementType(ms.getStatementType());
         builder.resultSetType(ms.getResultSetType());
         builder.cache(ms.getCache());
         builder.flushCacheRequired(ms.isFlushCacheRequired());
         builder.useCache(ms.isUseCache());
+        builder.resultOrdered(ms.isResultOrdered());
+
+        builder.keyGenerator(ms.getKeyGenerator());
+        String[] keyProperties = ms.getKeyProperties();
+        if (keyProperties != null) {
+            builder.keyProperty(String.join(",", keyProperties));
+        }
+        String[] keyColumns = ms.getKeyColumns();
+        if (keyColumns != null) {
+            builder.keyColumn(String.join(",", keyColumns));
+        }
+
+        builder.databaseId(ms.getDatabaseId());
+        builder.lang(ms.getLang());
+        String[] resultSets = ms.getResultSets();
+        if (resultSets != null) {
+            builder.resultSets(String.join(",", resultSets));
+        }
 
         return builder.build();
     }
 
-    public static void replaceSql(Invocation invocation, BoundSql boundSql, SqlSource sqlSource) {
+    /**
+     *
+     * @param invocation
+     * @param boundSql
+     * @param newSql
+     */
+    public static void executorInterceptorReplaceSql(Invocation invocation, BoundSql boundSql, String newSql) {
+        MybatisUtil.boundSqlSetSql(boundSql, newSql);
+        SqlSource newSqlSource = MybatisUtil.newBoundSqlSqlSource(boundSql);
+
         final Object[] args = invocation.getArgs();
-        MappedStatement statement = (MappedStatement) args[0];
+        // Interceptor 拦截到的 ms 是同一个对象，
+        // 这里需要clone一份，再进行属性替换。否则会影响到其他的执行。
+        MappedStatement statement = cloneMappedStatement((MappedStatement) args[0]);
         MetaObject msObject = SystemMetaObject.forObject(statement);
-        msObject.setValue("sqlSource", sqlSource);
+        msObject.setValue("sqlSource", newSqlSource);
+        args[0] = statement;
 
         // 如果参数个数为6，还需要处理 BoundSql 对象
         if (6 == args.length) {

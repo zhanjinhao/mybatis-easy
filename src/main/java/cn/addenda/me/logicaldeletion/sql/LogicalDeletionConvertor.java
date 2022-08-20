@@ -1,18 +1,20 @@
 package cn.addenda.me.logicaldeletion.sql;
 
-import cn.addenda.me.fieldfilling.FiledFillingException;
+import cn.addenda.me.logicaldeletion.LogicalDeletionException;
 import cn.addenda.ro.grammar.ast.CurdParser;
 import cn.addenda.ro.grammar.ast.CurdParserFactory;
 import cn.addenda.ro.grammar.ast.create.Insert;
 import cn.addenda.ro.grammar.ast.create.InsertSelectRep;
 import cn.addenda.ro.grammar.ast.create.InsertSetRep;
 import cn.addenda.ro.grammar.ast.create.InsertValuesRep;
+import cn.addenda.ro.grammar.ast.create.visitor.InsertAstMetaDataDetector;
 import cn.addenda.ro.grammar.ast.delete.Delete;
 import cn.addenda.ro.grammar.ast.expression.AssignmentList;
 import cn.addenda.ro.grammar.ast.expression.Curd;
 import cn.addenda.ro.grammar.ast.expression.Logic;
 import cn.addenda.ro.grammar.ast.expression.WhereSeg;
 import cn.addenda.ro.grammar.ast.retrieve.Select;
+import cn.addenda.ro.grammar.ast.retrieve.visitor.SelectAstMetaDataDetector;
 import cn.addenda.ro.grammar.ast.update.Update;
 import cn.addenda.ro.grammar.ast.update.visitor.UpdateAstMetaDataDetector;
 import cn.addenda.ro.grammar.lexical.token.Token;
@@ -47,7 +49,7 @@ public class LogicalDeletionConvertor {
         Curd curd = insert.getInsertRep();
 
         if (curd instanceof InsertSelectRep) {
-            throw new FiledFillingException("不能对 InsertSelectRep 进行字段填充");
+            throw new LogicalDeletionException("不能对 InsertSelectRep 进行字段填充");
         } else if (curd instanceof InsertSetRep) {
             InsertSetRep insertSetRep = (InsertSetRep) curd;
             AssignmentList assignmentList = (AssignmentList) insertSetRep.getAssignmentList();
@@ -62,7 +64,7 @@ public class LogicalDeletionConvertor {
             List<Token> columnList = insertValuesRep.getColumnList();
             columnList.add(LogicalDeletionConst.DELETE_TOKEN);
         }
-
+        insert.setDetector(InsertAstMetaDataDetector.getInstance());
         insert.reSetAstMetaData();
         return insert.toString();
     }
@@ -99,6 +101,7 @@ public class LogicalDeletionConvertor {
 
     public static String selectLogically(Select select) {
         Curd accept = select.accept(new SelectAddDeleteConditionVisitor());
+        select.setDetector(SelectAstMetaDataDetector.getInstance());
         accept.reSetAstMetaData();
         return accept.toString();
     }
@@ -114,7 +117,10 @@ public class LogicalDeletionConvertor {
     }
 
     public static String selectLogically(Select select, Set<String> tableNameSet) {
-        return select.accept(new SelectAddDeleteConditionVisitor(tableNameSet)).toString();
+        Curd accept = select.accept(new SelectAddDeleteConditionVisitor(tableNameSet));
+        select.setDetector(SelectAstMetaDataDetector.getInstance());
+        accept.reSetAstMetaData();
+        return accept.toString();
     }
 
     public static String updateLogically(String sql) {

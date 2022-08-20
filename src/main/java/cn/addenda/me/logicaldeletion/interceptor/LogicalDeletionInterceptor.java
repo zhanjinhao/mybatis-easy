@@ -5,7 +5,6 @@ import cn.addenda.me.logicaldeletion.LogicalDeletionException;
 import cn.addenda.me.logicaldeletion.annotation.LogicalDeletionController;
 import cn.addenda.me.logicaldeletion.sql.LogicalDeletionConvertor;
 import cn.addenda.me.utils.MeAnnotationUtil;
-import cn.addenda.me.utils.MeUtilsException;
 import cn.addenda.me.utils.MybatisUtil;
 import cn.addenda.ro.grammar.ast.CurdParserFactory;
 import cn.addenda.ro.grammar.ast.create.Insert;
@@ -18,14 +17,10 @@ import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.mapping.BoundSql;
 import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.mapping.SqlCommandType;
-import org.apache.ibatis.mapping.SqlSource;
 import org.apache.ibatis.plugin.*;
-import org.apache.ibatis.reflection.MetaObject;
-import org.apache.ibatis.reflection.SystemMetaObject;
 import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
 
-import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -67,18 +62,8 @@ public class LogicalDeletionInterceptor implements Interceptor {
             return invocation.proceed();
         }
 
-        BoundSql oldBoundSqlArg = 6 == args.length ? (BoundSql) args[5] : null;
-        SqlSource oldSqlSource = ms.getSqlSource();
-
-        MybatisUtil.boundSqlSetSql(boundSql, newSql);
-        SqlSource newSqlSource = MybatisUtil.newBoundSqlSqlSource(boundSql);
-
-        MybatisUtil.replaceSql(invocation, boundSql, newSqlSource);
-        try {
-            return invocation.proceed();
-        } finally {
-            MybatisUtil.replaceSql(invocation, oldBoundSqlArg, oldSqlSource);
-        }
+        MybatisUtil.executorInterceptorReplaceSql(invocation, boundSql, newSql);
+        return invocation.proceed();
     }
 
     private String processSql(String sql, MappedStatement ms) {

@@ -3,6 +3,7 @@ package cn.addenda.me.logicaldeletion.sql;
 import cn.addenda.ro.grammar.ast.AstMetaData;
 import cn.addenda.ro.grammar.ast.expression.*;
 import cn.addenda.ro.grammar.ast.retrieve.*;
+import cn.addenda.ro.grammar.ast.retrieve.visitor.SelectAstMetaDataDetector;
 import cn.addenda.ro.grammar.ast.retrieve.visitor.SelectVisitor;
 import cn.addenda.ro.grammar.lexical.token.Token;
 import cn.addenda.ro.grammar.lexical.token.TokenType;
@@ -35,6 +36,7 @@ class SelectAddDeleteConditionVisitor extends SelectVisitor<Curd> {
         if (rightCurd != null) {
             rightCurd.accept(this);
         }
+        select.setDetector(SelectAstMetaDataDetector.getInstance());
         select.reSetAstMetaData();
         return select;
     }
