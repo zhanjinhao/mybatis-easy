@@ -2,43 +2,42 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="cn.addenda.businesseasy.fieldfilling.FieldFillingTestMapper">
-
-    <resultMap id="tUser" type="cn.addenda.businesseasy.pojo.TUser">
-        <id property="userId" column="user_id"/>
-        <result property="createTime" column="create_time"
-                typeHandler="cn.addenda.businesseasy.fieldfilling.typehandler.FieldFillingLocalDateTimeHandler"/>
-        <result property="modifyTime" column="modify_time"
-                typeHandler="cn.addenda.businesseasy.fieldfilling.typehandler.FieldFillingLocalDateTimeHandler"/>
+<mapper namespace="cn.addenda.me.fieldfilling.FieldFillingTestMapper">
+    <resultMap id="tCourse" type="cn.addenda.me.pojo.TCourse">
+        <id property="courseId" column="course_id"/>
     </resultMap>
 
-    <select id="selectTest" resultMap="tUser">
-        select *
-        from t_user
+    <insert id="testInsert">
+        insert into t_course(course_id, course_name)
+        values (#{tCourse.courseId}, #{tCourse.courseName})
+    </insert>
+
+    <insert id="testInsertBatch">
+        insert into t_course(course_id, course_name)
+        values
+        <foreach collection="tCourses" item="item" separator=",">
+            (#{item.courseId}, #{item.courseName})
+        </foreach>
+    </insert>
+
+    <select id="testSelect" resultMap="tCourse">
+        select course_id, course_name
+        from t_course
+        where
+        <if test="courseName != null">
+            course_name = #{courseName,jdbcType=VARCHAR}
+        </if>
     </select>
 
-    <update id="updateTest">
-        update runoob_tbl
-        set runoob_title = replace(runoob_title, 'c++', 'python')
-        where runoob_id = 3
+    <update id="testUpdate">
+        update t_course
+        set course_name = concat(course_name, '1')
+        where course_name = #{courseName,jdbcType=VARCHAR}
     </update>
 
-    <insert id="insertTest">
-        insert into t_user(user_id, user_name, birthday)
-        values (#{tUser.userId}, #{tUser.userName}, #{tUser.birthday})
-    </insert>
-
-    <insert id="insertTypeHandlerTest">
-        insert into t_user(user_id, user_name, create_time, del_fg)
-        values (#{tUser.userId}, #{tUser.userName},
-                #{tUser.createTime, typeHandler=cn.addenda.businesseasy.fieldfilling.typehandler.FieldFillingLocalDateTimeHandler},
-                #{tUser.delFg})
-    </insert>
-
-    <delete id="deleteTest">
+    <delete id="testDelete">
         delete
-        from t_user
-        where user_id = #{userId}
+        from t_course
+        where course_name = #{courseName,jdbcType=VARCHAR}
     </delete>
-
 </mapper>

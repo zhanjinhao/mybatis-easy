@@ -3,29 +3,35 @@ package cn.addenda.me.fieldfilling.entity;
 import java.time.LocalDateTime;
 
 /**
- * @Author ISJINHAO
- * @Date 2022/2/5 14:16
+ * @author addenda
+ * @datetime 2022/8/16 20:40
  */
 public abstract class BaseEntity {
 
-    private String createUser;
-
+    private String creator;
+    private String creatorName;
     private LocalDateTime createTime;
 
-    private String modifyUser;
-
+    private String modifier;
+    private String modifierName;
     private LocalDateTime modifyTime;
 
     private String remark;
 
-    private byte delFg;
-
-    public String getCreateUser() {
-        return createUser;
+    public String getCreator() {
+        return creator;
     }
 
-    public void setCreateUser(String createUser) {
-        this.createUser = createUser;
+    public void setCreator(String creator) {
+        this.creator = creator;
+    }
+
+    public String getCreatorName() {
+        return creatorName;
+    }
+
+    public void setCreatorName(String creatorName) {
+        this.creatorName = creatorName;
     }
 
     public LocalDateTime getCreateTime() {
@@ -36,12 +42,20 @@ public abstract class BaseEntity {
         this.createTime = createTime;
     }
 
-    public String getModifyUser() {
-        return modifyUser;
+    public String getModifier() {
+        return modifier;
     }
 
-    public void setModifyUser(String modifyUser) {
-        this.modifyUser = modifyUser;
+    public void setModifier(String modifier) {
+        this.modifier = modifier;
+    }
+
+    public String getModifierName() {
+        return modifierName;
+    }
+
+    public void setModifierName(String modifierName) {
+        this.modifierName = modifierName;
     }
 
     public LocalDateTime getModifyTime() {
@@ -60,23 +74,16 @@ public abstract class BaseEntity {
         this.remark = remark;
     }
 
-    public byte getDelFg() {
-        return delFg;
-    }
-
-    public void setDelFg(byte delFg) {
-        this.delFg = delFg;
-    }
-
     @Override
     public String toString() {
         return "BaseEntity{" +
-                "createUser='" + createUser + '\'' +
+                "creator='" + creator + '\'' +
+                ", creatorName='" + creatorName + '\'' +
                 ", createTime=" + createTime +
-                ", modifyUser='" + modifyUser + '\'' +
+                ", modifier='" + modifier + '\'' +
+                ", modifierName='" + modifierName + '\'' +
                 ", modifyTime=" + modifyTime +
                 ", remark='" + remark + '\'' +
-                ", delFg=" + delFg +
                 '}';
     }
 }

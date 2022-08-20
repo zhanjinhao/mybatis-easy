@@ -7,13 +7,10 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface DQLFieldFilling {
 
-    /**
-     * 此属性为true时，independent 和 availableTableNames 会被覆盖为 true 和 ""。
-     */
-    boolean allTableNameAvailable() default false;
+    String ALL = "all";
 
-    String availableTableNames() default "";
+    String IGNORE = "ignore";
 
-    boolean independent() default false;
+    String[] tableNameSet() default ALL;
 
 }
