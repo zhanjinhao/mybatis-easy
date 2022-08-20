@@ -101,3 +101,7 @@ ID是填充到Entity里的，所以只有 Mapper#insert(TUser tUser); 这样的�
 SQL解析器是个人开发的，运行此项目需要加入依赖。
 地址：https://github.com/zhanjinhao/relational-operations-grammar。
 
+
+# todo
+
+1、增加窗口函数。
