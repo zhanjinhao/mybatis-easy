@@ -243,6 +243,11 @@ class SelectAddDeleteConditionVisitor extends SelectVisitor<Curd> {
     }
 
     @Override
+    public Curd visitOrderItem(OrderItem orderItem) {
+        return orderItem;
+    }
+
+    @Override
     public Curd visitLimitSeg(LimitSeg limitSeg) {
         return limitSeg;
     }
@@ -253,8 +258,48 @@ class SelectAddDeleteConditionVisitor extends SelectVisitor<Curd> {
     }
 
     @Override
+    public Curd visitGroupConcat(GroupConcat groupConcat) {
+        return groupConcat;
+    }
+
+    @Override
     public Curd visitCaseWhen(CaseWhen caseWhen) {
         return caseWhen;
+    }
+
+    @Override
+    public Curd visitSLock(SLock sLock) {
+        return sLock;
+    }
+
+    @Override
+    public Curd visitXLock(XLock xLock) {
+        return xLock;
+    }
+
+    @Override
+    public Curd visitFrameEdge(FrameEdge frameEdge) {
+        return frameEdge;
+    }
+
+    @Override
+    public Curd visitFrameBetween(FrameBetween frameBetween) {
+        return frameBetween;
+    }
+
+    @Override
+    public Curd visitDynamicFrame(DynamicFrame dynamicFrame) {
+        return dynamicFrame;
+    }
+
+    @Override
+    public Curd visitWindow(Window window) {
+        return window;
+    }
+
+    @Override
+    public Curd visitWindowFunction(WindowFunction windowFunction) {
+        return null;
     }
 
     @Override

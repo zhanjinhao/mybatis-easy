@@ -261,6 +261,11 @@ class SelectReturnBaseEntityColumnVisitor extends SelectVisitor<List<ColumnRep>>
     }
 
     @Override
+    public List<ColumnRep> visitOrderItem(OrderItem orderItem) {
+        return null;
+    }
+
+    @Override
     public List<ColumnRep> visitLimitSeg(LimitSeg limitSeg) {
         return null;
     }
@@ -271,7 +276,47 @@ class SelectReturnBaseEntityColumnVisitor extends SelectVisitor<List<ColumnRep>>
     }
 
     @Override
+    public List<ColumnRep> visitGroupConcat(GroupConcat groupConcat) {
+        return null;
+    }
+
+    @Override
     public List<ColumnRep> visitCaseWhen(CaseWhen caseWhen) {
+        return null;
+    }
+
+    @Override
+    public List<ColumnRep> visitSLock(SLock sLock) {
+        return null;
+    }
+
+    @Override
+    public List<ColumnRep> visitXLock(XLock xLock) {
+        return null;
+    }
+
+    @Override
+    public List<ColumnRep> visitFrameEdge(FrameEdge frameEdge) {
+        return null;
+    }
+
+    @Override
+    public List<ColumnRep> visitFrameBetween(FrameBetween frameBetween) {
+        return null;
+    }
+
+    @Override
+    public List<ColumnRep> visitDynamicFrame(DynamicFrame dynamicFrame) {
+        return null;
+    }
+
+    @Override
+    public List<ColumnRep> visitWindow(Window window) {
+        return null;
+    }
+
+    @Override
+    public List<ColumnRep> visitWindowFunction(WindowFunction windowFunction) {
         return null;
     }
 
