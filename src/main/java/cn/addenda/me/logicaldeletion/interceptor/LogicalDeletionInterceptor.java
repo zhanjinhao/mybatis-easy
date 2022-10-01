@@ -6,7 +6,7 @@ import cn.addenda.me.logicaldeletion.annotation.LogicalDeletionController;
 import cn.addenda.me.logicaldeletion.sql.LogicalDeletionConvertor;
 import cn.addenda.me.utils.MeAnnotationUtils;
 import cn.addenda.me.utils.MybatisUtils;
-import cn.addenda.ro.grammar.ast.CurdParserFactory;
+import cn.addenda.ro.grammar.ast.CurdUtils;
 import cn.addenda.ro.grammar.ast.create.Insert;
 import cn.addenda.ro.grammar.ast.delete.Delete;
 import cn.addenda.ro.grammar.ast.expression.Curd;
@@ -71,7 +71,7 @@ public class LogicalDeletionInterceptor implements Interceptor {
         if (SqlCommandType.SELECT.equals(sqlCommandType)) {
             return LogicalDeletionConvertor.selectLogically(sql, logicalDeletionTableNameSet);
         } else if (SqlCommandType.INSERT.equals(sqlCommandType)) {
-            Curd parse = CurdParserFactory.createCurdParser(sql).parse();
+            Curd parse = CurdUtils.parse(sql, true);
             if (parse instanceof Insert) {
                 Insert insert = (Insert) parse;
                 Token tableName = insert.getTableName();
@@ -83,7 +83,7 @@ public class LogicalDeletionInterceptor implements Interceptor {
                 throw new LogicalDeletionException("Mybatis SqlCommandType.INSERT 应该执行 INSERT 语句！");
             }
         } else if (SqlCommandType.UPDATE.equals(sqlCommandType)) {
-            Curd parse = CurdParserFactory.createCurdParser(sql).parse();
+            Curd parse = CurdUtils.parse(sql, true);
             if (parse instanceof Update) {
                 Update update = (Update) parse;
                 Token tableName = update.getTableName();
@@ -95,7 +95,7 @@ public class LogicalDeletionInterceptor implements Interceptor {
                 throw new LogicalDeletionException("Mybatis SqlCommandType.UPDATE 应该执行 UPDATE 语句！");
             }
         } else if (SqlCommandType.DELETE.equals(sqlCommandType)) {
-            Curd parse = CurdParserFactory.createCurdParser(sql).parse();
+            Curd parse = CurdUtils.parse(sql, true);
             if (parse instanceof Delete) {
                 Delete update = (Delete) parse;
                 Token tableName = update.getTableName();

@@ -8,7 +8,7 @@ import cn.addenda.me.fieldfilling.annotation.DQLFieldFilling;
 import cn.addenda.me.fieldfilling.sql.FieldFillingConvertor;
 import cn.addenda.me.utils.MeAnnotationUtils;
 import cn.addenda.me.utils.MybatisUtils;
-import cn.addenda.ro.grammar.ast.CurdParserFactory;
+import cn.addenda.ro.grammar.ast.CurdUtils;
 import cn.addenda.ro.grammar.ast.create.Insert;
 import cn.addenda.ro.grammar.ast.expression.Curd;
 import cn.addenda.ro.grammar.ast.retrieve.Select;
@@ -93,7 +93,7 @@ public class FieldFillingInterceptor implements Interceptor {
     }
 
     private String processSelect(String sql, DQLFieldFilling dqlFieldFilling) {
-        Curd parse = CurdParserFactory.createCurdParser(sql).parse();
+        Curd parse = CurdUtils.parse(sql, true);
         if (parse instanceof Select) {
             Select select = (Select) parse;
             if (dqlFieldFilling == null) {
@@ -140,7 +140,7 @@ public class FieldFillingInterceptor implements Interceptor {
             }
         }
 
-        Curd parse = CurdParserFactory.createCurdParser(sql).parse();
+        Curd parse = CurdUtils.parse(sql, true);
         if (parse instanceof Update) {
             Update update = (Update) parse;
             Token tableName = update.getTableName();
@@ -166,7 +166,7 @@ public class FieldFillingInterceptor implements Interceptor {
             }
         }
 
-        Curd parse = CurdParserFactory.createCurdParser(sql).parse();
+        Curd parse = CurdUtils.parse(sql, true);
         if (parse instanceof Insert) {
             Insert insert = (Insert) parse;
             Token tableName = insert.getTableName();

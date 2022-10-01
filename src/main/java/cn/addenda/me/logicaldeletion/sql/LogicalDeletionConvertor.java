@@ -1,22 +1,18 @@
 package cn.addenda.me.logicaldeletion.sql;
 
 import cn.addenda.me.logicaldeletion.LogicalDeletionException;
-import cn.addenda.ro.grammar.ast.CurdParser;
-import cn.addenda.ro.grammar.ast.CurdParserFactory;
+import cn.addenda.ro.grammar.ast.CurdUtils;
 import cn.addenda.ro.grammar.ast.create.Insert;
 import cn.addenda.ro.grammar.ast.create.InsertSelectRep;
 import cn.addenda.ro.grammar.ast.create.InsertSetRep;
 import cn.addenda.ro.grammar.ast.create.InsertValuesRep;
-import cn.addenda.ro.grammar.ast.create.visitor.InsertAstMetaDataDetector;
 import cn.addenda.ro.grammar.ast.delete.Delete;
 import cn.addenda.ro.grammar.ast.expression.AssignmentList;
 import cn.addenda.ro.grammar.ast.expression.Curd;
 import cn.addenda.ro.grammar.ast.expression.Logic;
 import cn.addenda.ro.grammar.ast.expression.WhereSeg;
 import cn.addenda.ro.grammar.ast.retrieve.Select;
-import cn.addenda.ro.grammar.ast.retrieve.visitor.SelectAstMetaDataDetector;
 import cn.addenda.ro.grammar.ast.update.Update;
-import cn.addenda.ro.grammar.ast.update.visitor.UpdateAstMetaDataDetector;
 import cn.addenda.ro.grammar.lexical.token.Token;
 import cn.addenda.ro.grammar.lexical.token.TokenType;
 import cn.addenda.ro.grammar.util.ReflectUtils;
@@ -36,8 +32,7 @@ public class LogicalDeletionConvertor {
     }
 
     public static String insertLogically(String sql) {
-        CurdParser curdParser = CurdParserFactory.createCurdParser(sql);
-        Curd parse = curdParser.parse();
+        Curd parse = CurdUtils.parse(sql, true);
         if (!(parse instanceof Insert)) {
             return parse.toString();
         }
@@ -64,14 +59,12 @@ public class LogicalDeletionConvertor {
             List<Token> columnList = insertValuesRep.getColumnList();
             columnList.add(LogicalDeletionConst.DELETE_TOKEN);
         }
-        insert.setDetector(InsertAstMetaDataDetector.getInstance());
         insert.reSetAstMetaData();
         return insert.toString();
     }
 
     public static String deleteLogically(String sql) {
-        CurdParser curdParser = CurdParserFactory.createCurdParser(sql);
-        Curd parse = curdParser.parse();
+        Curd parse = CurdUtils.parse(sql, true);
         if (!(parse instanceof Delete)) {
             return parse.toString();
         }
@@ -85,14 +78,12 @@ public class LogicalDeletionConvertor {
         List<AssignmentList.Entry> entryList = new ArrayList<>();
         entryList.add(new AssignmentList.Entry(LogicalDeletionConst.DELETE_COLUMN.getName(), LogicalDeletionConst.ONE.deepClone()));
         Update update = new Update(tableName, new AssignmentList(entryList), whereSeg);
-        update.setDetector(UpdateAstMetaDataDetector.getInstance());
         update.reSetAstMetaData();
         return update.toString();
     }
 
     public static String selectLogically(String sql) {
-        CurdParser curdParser = CurdParserFactory.createCurdParser(sql);
-        Curd select = curdParser.parse();
+        Curd select = CurdUtils.parse(sql, true);
         if (!(select instanceof Select)) {
             return select.toString();
         }
@@ -101,14 +92,12 @@ public class LogicalDeletionConvertor {
 
     public static String selectLogically(Select select) {
         Curd accept = select.accept(new SelectAddDeleteConditionVisitor());
-        select.setDetector(SelectAstMetaDataDetector.getInstance());
         accept.reSetAstMetaData();
         return accept.toString();
     }
 
     public static String selectLogically(String sql, Set<String> tableNameSet) {
-        CurdParser curdParser = CurdParserFactory.createCurdParser(sql);
-        Curd select = curdParser.parse();
+        Curd select = CurdUtils.parse(sql, true);
         if (!(select instanceof Select)) {
             return select.toString();
         }
@@ -118,14 +107,12 @@ public class LogicalDeletionConvertor {
 
     public static String selectLogically(Select select, Set<String> tableNameSet) {
         Curd accept = select.accept(new SelectAddDeleteConditionVisitor(tableNameSet));
-        select.setDetector(SelectAstMetaDataDetector.getInstance());
         accept.reSetAstMetaData();
         return accept.toString();
     }
 
     public static String updateLogically(String sql) {
-        CurdParser curdParser = CurdParserFactory.createCurdParser(sql);
-        Curd parse = curdParser.parse();
+        Curd parse = CurdUtils.parse(sql, true);
         if (!(parse instanceof Update)) {
             return parse.toString();
         }
@@ -142,7 +129,6 @@ public class LogicalDeletionConvertor {
             logic = new Logic(logic, new Token(TokenType.AND, "and"), LogicalDeletionConst.EQUAL_ZERO.deepClone());
             ReflectUtils.setFieldValue(whereSeg, "logic", logic);
         }
-        update.setDetector(UpdateAstMetaDataDetector.getInstance());
         update.reSetAstMetaData();
         return update.toString();
     }

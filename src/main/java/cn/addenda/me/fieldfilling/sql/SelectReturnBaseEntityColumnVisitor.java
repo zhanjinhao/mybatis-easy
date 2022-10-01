@@ -4,7 +4,6 @@ import cn.addenda.me.fieldfilling.FieldFillingException;
 import cn.addenda.me.fieldfilling.entity.BaseEntity;
 import cn.addenda.ro.grammar.ast.expression.*;
 import cn.addenda.ro.grammar.ast.retrieve.*;
-import cn.addenda.ro.grammar.ast.retrieve.visitor.SelectAstMetaDataDetector;
 import cn.addenda.ro.grammar.ast.retrieve.visitor.SelectVisitor;
 import cn.addenda.ro.grammar.lexical.token.Token;
 import cn.addenda.ro.grammar.lexical.token.TokenType;
@@ -94,7 +93,6 @@ class SelectReturnBaseEntityColumnVisitor extends SelectVisitor<List<ColumnRep>>
                 return new ArrayList<>();
             }
         }
-        select.setDetector(SelectAstMetaDataDetector.getInstance());
         select.reSetAstMetaData();
         return tokenList;
     }

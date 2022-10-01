@@ -2,15 +2,11 @@ package cn.addenda.me.fieldfilling.sql;
 
 import cn.addenda.me.fieldfilling.FieldFillingContext;
 import cn.addenda.me.fieldfilling.FieldFillingException;
-import cn.addenda.ro.grammar.ast.CurdParser;
-import cn.addenda.ro.grammar.ast.CurdParserFactory;
+import cn.addenda.ro.grammar.ast.CurdUtils;
 import cn.addenda.ro.grammar.ast.create.*;
-import cn.addenda.ro.grammar.ast.create.visitor.InsertAstMetaDataDetector;
 import cn.addenda.ro.grammar.ast.expression.*;
 import cn.addenda.ro.grammar.ast.retrieve.Select;
-import cn.addenda.ro.grammar.ast.retrieve.visitor.SelectAstMetaDataDetector;
 import cn.addenda.ro.grammar.ast.update.Update;
-import cn.addenda.ro.grammar.ast.update.visitor.UpdateAstMetaDataDetector;
 import cn.addenda.ro.grammar.lexical.token.Token;
 import cn.addenda.ro.grammar.lexical.token.TokenType;
 
@@ -26,8 +22,7 @@ public class FieldFillingConvertor {
     }
 
     public static String selectFieldFilling(String sql) {
-        CurdParser curdParser = CurdParserFactory.createCurdParser(sql);
-        Curd parse = curdParser.parse();
+        Curd parse = CurdUtils.parse(sql, true);
         if (!(parse instanceof Select)) {
             return parse.toString();
         }
@@ -37,14 +32,12 @@ public class FieldFillingConvertor {
 
     public static String selectFieldFilling(Select select) {
         select.accept(new SelectReturnBaseEntityColumnVisitor(null));
-        select.setDetector(SelectAstMetaDataDetector.getInstance());
         select.reSetAstMetaData();
         return select.toString();
     }
 
     public static String selectFieldFilling(String sql, Set<String> tableNameSet) {
-        CurdParser curdParser = CurdParserFactory.createCurdParser(sql);
-        Curd parse = curdParser.parse();
+        Curd parse = CurdUtils.parse(sql, true);
         if (!(parse instanceof Select)) {
             return parse.toString();
         }
@@ -54,14 +47,12 @@ public class FieldFillingConvertor {
 
     public static String selectFieldFilling(Select select, Set<String> tableNameSet) {
         select.accept(new SelectReturnBaseEntityColumnVisitor(tableNameSet));
-        select.setDetector(SelectAstMetaDataDetector.getInstance());
         select.reSetAstMetaData();
         return select.toString();
     }
 
     public static String insertFieldFilling(String sql, FieldFillingContext context) {
-        CurdParser curdParser = CurdParserFactory.createCurdParser(sql);
-        Curd parse = curdParser.parse();
+        Curd parse = CurdUtils.parse(sql, true);
         if (!(parse instanceof Insert)) {
             return parse.toString();
         }
@@ -106,14 +97,12 @@ public class FieldFillingConvertor {
             columnList.add(FilledFillingConst.MODIFY_TIME_TOKEN);
             columnList.add(FilledFillingConst.REMARK_TOKEN);
         }
-        insert.setDetector(InsertAstMetaDataDetector.getInstance());
         insert.reSetAstMetaData();
         return insert.toString();
     }
 
     public static String updateFieldFilling(String sql, FieldFillingContext context) {
-        CurdParser curdParser = CurdParserFactory.createCurdParser(sql);
-        Curd parse = curdParser.parse();
+        Curd parse = CurdUtils.parse(sql, true);
         if (!(parse instanceof Update)) {
             return parse.toString();
         }
@@ -131,7 +120,6 @@ public class FieldFillingConvertor {
         if (remark != null) {
             entryList.add(new AssignmentList.Entry(FilledFillingConst.REMARK_TOKEN, newLiteral(TokenType.STRING, remark)));
         }
-        update.setDetector(UpdateAstMetaDataDetector.getInstance());
         update.reSetAstMetaData();
         return update.toString();
     }
