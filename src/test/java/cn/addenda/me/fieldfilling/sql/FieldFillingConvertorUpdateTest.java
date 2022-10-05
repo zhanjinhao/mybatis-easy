@@ -1,6 +1,7 @@
 package cn.addenda.me.fieldfilling.sql;
 
 import cn.addenda.me.fieldfilling.DefaultFieldFillingContext;
+import cn.addenda.ro.grammar.function.evaluator.DefaultFunctionEvaluator;
 
 /**
  * @author addenda
@@ -23,8 +24,9 @@ public class FieldFillingConvertorUpdateTest {
     }
 
     private static void test() {
+        FieldFillingConvertor fieldFillingConvertor = new FieldFillingConvertor(DefaultFunctionEvaluator.getInstance());
         for (String sql : sqls) {
-            System.out.println(FieldFillingConvertor.updateFieldFilling(sql, DefaultFieldFillingContext.getInstance()));
+            System.out.println(fieldFillingConvertor.updateFieldFilling(sql, DefaultFieldFillingContext.getInstance()));
         }
     }
 

@@ -22,13 +22,15 @@
             <property name="idGenerator" value="cn.addenda.me.idfilling.idgenerator.NanoTimeIdGenerator"/>
         </plugin>
         <plugin interceptor="cn.addenda.me.logicaldeletion.interceptor.LogicalDeletionInterceptor">
-            <property name="logicalDeletionTableNameSet" value="t_course"/>
+            <property name="tableNameSet" value="t_course"/>
         </plugin>
         <plugin interceptor="cn.addenda.me.fieldfilling.interceptor.FieldFillingInterceptor">
-            <property name="defaultFieldFillingContext"
+            <property name="fieldFillingContext"
                       value="cn.addenda.me.fieldfilling.DefaultFieldFillingContext"/>
-            <property name="fieldFillingTableNameSet"
+            <property name="tableNameSet"
                       value="t_course,A,B,C,D"/>
+            <property name="functionEvaluator"
+                      value="cn.addenda.ro.grammar.function.evaluator.DefaultFunctionEvaluator"/>
         </plugin>
     </plugins>
 

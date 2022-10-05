@@ -13,6 +13,9 @@ import cn.addenda.ro.grammar.ast.create.Insert;
 import cn.addenda.ro.grammar.ast.expression.Curd;
 import cn.addenda.ro.grammar.ast.retrieve.Select;
 import cn.addenda.ro.grammar.ast.update.Update;
+import cn.addenda.ro.grammar.function.descriptor.FunctionDescriptor;
+import cn.addenda.ro.grammar.function.evaluator.DefaultFunctionEvaluator;
+import cn.addenda.ro.grammar.function.evaluator.FunctionEvaluator;
 import cn.addenda.ro.grammar.lexical.token.Token;
 import org.apache.ibatis.cache.CacheKey;
 import org.apache.ibatis.executor.Executor;
@@ -27,7 +30,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -43,11 +45,13 @@ import java.util.stream.Collectors;
 })
 public class FieldFillingInterceptor implements Interceptor {
 
-    private static final String DEFAULT_FIELD_FILLING_CONTEXT_NAME = "defaultFieldFillingContext";
-    private FieldFillingContext defaultFieldFillingContext;
+    private FieldFillingContext fieldFillingContext;
 
-    private static final String FIELD_FILLING_TABLE_NAME_SET = "fieldFillingTableNameSet";
-    private final Set<String> fieldFillingTableNameSet = new HashSet<>();
+    private Set<String> tableNameSet;
+
+    private FunctionEvaluator<? extends FunctionDescriptor> functionEvaluator;
+
+    private FieldFillingConvertor fieldFillingConvertor;
 
     @Override
     public Object intercept(Invocation invocation) throws Throwable {
@@ -93,22 +97,22 @@ public class FieldFillingInterceptor implements Interceptor {
     }
 
     private String processSelect(String sql, DQLFieldFilling dqlFieldFilling) {
-        Curd parse = CurdUtils.parse(sql, true);
+        Curd parse = CurdUtils.parse(sql, functionEvaluator, true);
         if (parse instanceof Select) {
             Select select = (Select) parse;
             if (dqlFieldFilling == null) {
-                return FieldFillingConvertor.selectFieldFilling(select, fieldFillingTableNameSet);
+                return fieldFillingConvertor.selectFieldFilling(select, tableNameSet);
             }
-            String[] tableNameSet = dqlFieldFilling.tableNameSet();
-            if (tableNameSet.length == 1) {
-                String mode = tableNameSet[0];
+            String[] aTableNameSet = dqlFieldFilling.tableNameSet();
+            if (aTableNameSet.length == 1) {
+                String mode = aTableNameSet[0];
                 if (DQLFieldFilling.ALL.equals(mode)) {
-                    return FieldFillingConvertor.selectFieldFilling(select, fieldFillingTableNameSet);
+                    return fieldFillingConvertor.selectFieldFilling(select, this.tableNameSet);
                 } else if (DQLFieldFilling.IGNORE.equals(mode)) {
                     return null;
                 }
             }
-            return FieldFillingConvertor.selectFieldFilling(select, new HashSet<>(Arrays.asList(tableNameSet)));
+            return fieldFillingConvertor.selectFieldFilling(select, new HashSet<>(Arrays.asList(aTableNameSet)));
         } else {
             throw new FieldFillingException("Mybatis SqlCommandType.SELECT 应该执行 SELECT 语句！");
         }
@@ -128,24 +132,24 @@ public class FieldFillingInterceptor implements Interceptor {
 
 
     private String processUpdate(String sql, DMLFieldFilling dmlFieldFilling) {
-        FieldFillingContext fieldFillingContext;
+        FieldFillingContext aFieldFillingContext;
         if (dmlFieldFilling == null) {
-            fieldFillingContext = defaultFieldFillingContext;
+            aFieldFillingContext = this.fieldFillingContext;
         } else {
             Class<? extends FieldFillingContext> context = dmlFieldFilling.context();
             if (context != null) {
-                fieldFillingContext = newInstance(context);
+                aFieldFillingContext = newInstance(context);
             } else {
-                fieldFillingContext = defaultFieldFillingContext;
+                aFieldFillingContext = this.fieldFillingContext;
             }
         }
 
-        Curd parse = CurdUtils.parse(sql, true);
+        Curd parse = CurdUtils.parse(sql, functionEvaluator, true);
         if (parse instanceof Update) {
             Update update = (Update) parse;
             Token tableName = update.getTableName();
-            if (fieldFillingTableNameSet.contains(String.valueOf(tableName.getLiteral()))) {
-                return FieldFillingConvertor.updateFieldFilling(update, fieldFillingContext);
+            if (tableNameSet.contains(String.valueOf(tableName.getLiteral()))) {
+                return fieldFillingConvertor.updateFieldFilling(update, aFieldFillingContext);
             }
             return null;
         } else {
@@ -154,24 +158,24 @@ public class FieldFillingInterceptor implements Interceptor {
     }
 
     private String processInsert(String sql, DMLFieldFilling dmlFieldFilling) {
-        FieldFillingContext fieldFillingContext;
+        FieldFillingContext aFieldFillingContext;
         if (dmlFieldFilling == null) {
-            fieldFillingContext = defaultFieldFillingContext;
+            aFieldFillingContext = this.fieldFillingContext;
         } else {
             Class<? extends FieldFillingContext> context = dmlFieldFilling.context();
             if (context != null) {
-                fieldFillingContext = newInstance(context);
+                aFieldFillingContext = newInstance(context);
             } else {
-                fieldFillingContext = defaultFieldFillingContext;
+                aFieldFillingContext = this.fieldFillingContext;
             }
         }
 
-        Curd parse = CurdUtils.parse(sql, true);
+        Curd parse = CurdUtils.parse(sql, functionEvaluator, true);
         if (parse instanceof Insert) {
             Insert insert = (Insert) parse;
             Token tableName = insert.getTableName();
-            if (fieldFillingTableNameSet.contains(String.valueOf(tableName.getLiteral()))) {
-                return FieldFillingConvertor.insertFieldFilling(insert, fieldFillingContext);
+            if (tableNameSet.contains(String.valueOf(tableName.getLiteral()))) {
+                return fieldFillingConvertor.insertFieldFilling(insert, aFieldFillingContext);
             }
             return null;
         } else {
@@ -186,49 +190,58 @@ public class FieldFillingInterceptor implements Interceptor {
 
     @Override
     public void setProperties(Properties properties) {
-        String defaultFieldFillingContextNameValue = (String) properties.get(DEFAULT_FIELD_FILLING_CONTEXT_NAME);
-        if (defaultFieldFillingContextNameValue != null) {
-            this.defaultFieldFillingContext = newInstance(defaultFieldFillingContextNameValue);
-        }
-
-        String tableNameSet = properties.getProperty(FIELD_FILLING_TABLE_NAME_SET);
-        if (tableNameSet != null) {
-            fieldFillingTableNameSet.addAll(Arrays.stream(tableNameSet.split(",")).collect(Collectors.toSet()));
-        }
-    }
-
-    private FieldFillingContext newInstance(String clazzName) {
-        if (clazzName == null) {
-            return DefaultFieldFillingContext.getInstance();
-        }
-        try {
-            Class<?> aClass = Class.forName(clazzName);
-            if (!FieldFillingContext.class.isAssignableFrom(aClass)) {
-                throw new FieldFillingException("FieldFillingContext初始化失败：" + clazzName + "需要是cn.addenda.me.fieldfilling.FieldFillingContext的子类!");
-            }
-            return newInstance((Class<? extends FieldFillingContext>) aClass);
-        } catch (Exception e) {
-            throw new FieldFillingException("FieldFillingContext初始化失败：" + clazzName, e);
-        }
-    }
-
-    private final Map<Class<? extends FieldFillingContext>, FieldFillingContext> fieldFillingContextMap = new ConcurrentHashMap<>();
-
-    private FieldFillingContext newInstance(Class<? extends FieldFillingContext> aClass) {
-        return fieldFillingContextMap.computeIfAbsent(aClass, s -> {
+        String aFieldFillingContext = (String) properties.get("fieldFillingContext");
+        if (aFieldFillingContext != null) {
             try {
-                Method[] methods = aClass.getMethods();
-                for (Method method : methods) {
-                    if (method.getName().equals("getInstance") && Modifier.isStatic(method.getModifiers()) &&
-                            method.getParameterCount() == 0 && FieldFillingContext.class.isAssignableFrom(method.getReturnType())) {
-                        return (FieldFillingContext) method.invoke(null);
-                    }
+                Class<?> aClass = Class.forName(aFieldFillingContext);
+                if (!FieldFillingContext.class.isAssignableFrom(aClass)) {
+                    throw new FieldFillingException(aFieldFillingContext + "不是cn.addenda.me.fieldfilling.FieldFillingContext的子类!");
                 }
-                return aClass.newInstance();
+                this.fieldFillingContext = newInstance((Class<? extends FieldFillingContext>) aClass);
             } catch (Exception e) {
-                throw new FieldFillingException("FieldFillingContext初始化失败：" + aClass.getName(), e);
+                throw new FieldFillingException("FieldFillingContext初始化失败：" + aFieldFillingContext, e);
             }
-        });
+        } else {
+            this.fieldFillingContext = DefaultFieldFillingContext.getInstance();
+        }
+
+        String aTableNameSet = properties.getProperty("tableNameSet");
+        if (aTableNameSet != null) {
+            this.tableNameSet = Arrays.stream(aTableNameSet.split(",")).collect(Collectors.toSet());
+        } else {
+            this.tableNameSet = new HashSet<>();
+        }
+
+        String aFunctionEvaluator = properties.getProperty("functionEvaluator");
+        if (aFunctionEvaluator != null) {
+            try {
+                Class<?> aClass = Class.forName(aFunctionEvaluator);
+                if (!FunctionEvaluator.class.isAssignableFrom(aClass)) {
+                    throw new FieldFillingException(aFunctionEvaluator + "不是cn.addenda.ro.grammar.function.evaluator.FunctionEvaluator的子类!");
+                }
+                this.functionEvaluator = newInstance((Class<? extends FunctionEvaluator>) aClass);
+            } catch (Exception e) {
+                throw new FieldFillingException("FunctionEvaluator初始化失败：" + aFunctionEvaluator, e);
+            }
+        } else {
+            this.functionEvaluator = DefaultFunctionEvaluator.getInstance();
+        }
+        this.fieldFillingConvertor = new FieldFillingConvertor(functionEvaluator);
+    }
+
+    private <T> T newInstance(Class<? extends T> aClass) {
+        try {
+            Method[] methods = aClass.getMethods();
+            for (Method method : methods) {
+                if (method.getName().equals("getInstance") && Modifier.isStatic(method.getModifiers()) &&
+                        method.getParameterCount() == 0) {
+                    return (T) method.invoke(null);
+                }
+            }
+            return aClass.newInstance();
+        } catch (Exception e) {
+            throw new FieldFillingException("FieldFillingContext初始化失败：" + aClass.getName(), e);
+        }
     }
 
 }

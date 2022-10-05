@@ -1,5 +1,7 @@
 package cn.addenda.me.logicaldeletion.sql;
 
+import cn.addenda.ro.grammar.function.evaluator.DefaultFunctionEvaluator;
+
 /**
  * @author addenda
  * @datetime 2022/8/9 18:24
@@ -21,8 +23,9 @@ public class LogicalDeletionConvertorUpdateTest {
     }
 
     private static void test() {
+        LogicalDeletionConvertor logicalDeletionConvertor = new LogicalDeletionConvertor(DefaultFunctionEvaluator.getInstance());
         for (int i = 0; i < sqls.length; i++) {
-            System.out.println(LogicalDeletionConvertor.updateLogically(sqls[i]));
+            System.out.println(logicalDeletionConvertor.updateLogically(sqls[i]));
         }
     }
 

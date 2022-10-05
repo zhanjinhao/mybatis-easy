@@ -1,5 +1,7 @@
 package cn.addenda.me.logicaldeletion.sql;
 
+import cn.addenda.ro.grammar.function.evaluator.DefaultFunctionEvaluator;
+
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -221,8 +223,9 @@ public class LogicalDeletionConvertorSelectTest {
     }
 
     private static void test() {
+        LogicalDeletionConvertor logicalDeletionConvertor = new LogicalDeletionConvertor(DefaultFunctionEvaluator.getInstance());
         for (int i = 0; i < sqls.length; i++) {
-            System.out.println(LogicalDeletionConvertor.selectLogically(sqls[i]));
+            System.out.println(logicalDeletionConvertor.selectLogically(sqls[i]));
         }
     }
 
@@ -232,8 +235,8 @@ public class LogicalDeletionConvertorSelectTest {
                 "select * " +
                         "from (select * from A) a left join B b on a.id = b.aid " +
                         "where a.id in (select aid from c)";
-
-        System.out.println(LogicalDeletionConvertor.selectLogically(sql, asSet("B")));
+        LogicalDeletionConvertor logicalDeletionConvertor = new LogicalDeletionConvertor(DefaultFunctionEvaluator.getInstance());
+        System.out.println(logicalDeletionConvertor.selectLogically(sql, asSet("B")));
     }
 
 
@@ -252,7 +255,8 @@ public class LogicalDeletionConvertorSelectTest {
                 + "      and (ts_role.ROLE_NAME is null or ts_role.ROLE_NAME like concat('%', #{roleName,jdbcType=VARCHAR}, '%'))\n"
                 + "      group by ts_group.id";
 
-        System.out.println(LogicalDeletionConvertor.selectLogically(sql, asSet("ts_group_role", "ts_group")));
+        LogicalDeletionConvertor logicalDeletionConvertor = new LogicalDeletionConvertor(DefaultFunctionEvaluator.getInstance());
+        System.out.println(logicalDeletionConvertor.selectLogically(sql, asSet("ts_group_role", "ts_group")));
 
         /**
          * correct result:

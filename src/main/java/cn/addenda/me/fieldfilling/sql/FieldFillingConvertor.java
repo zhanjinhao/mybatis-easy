@@ -7,6 +7,7 @@ import cn.addenda.ro.grammar.ast.create.*;
 import cn.addenda.ro.grammar.ast.expression.*;
 import cn.addenda.ro.grammar.ast.retrieve.Select;
 import cn.addenda.ro.grammar.ast.update.Update;
+import cn.addenda.ro.grammar.function.evaluator.FunctionEvaluator;
 import cn.addenda.ro.grammar.lexical.token.Token;
 import cn.addenda.ro.grammar.lexical.token.TokenType;
 
@@ -18,11 +19,14 @@ import java.util.*;
  */
 public class FieldFillingConvertor {
 
-    private FieldFillingConvertor() {
+    private final FunctionEvaluator<?> functionEvaluator;
+
+    public FieldFillingConvertor(FunctionEvaluator<?> functionEvaluator) {
+        this.functionEvaluator = functionEvaluator;
     }
 
-    public static String selectFieldFilling(String sql) {
-        Curd parse = CurdUtils.parse(sql, true);
+    public String selectFieldFilling(String sql) {
+        Curd parse = CurdUtils.parse(sql, functionEvaluator, true);
         if (!(parse instanceof Select)) {
             return parse.toString();
         }
@@ -30,14 +34,14 @@ public class FieldFillingConvertor {
         return selectFieldFilling((Select) parse);
     }
 
-    public static String selectFieldFilling(Select select) {
+    public String selectFieldFilling(Select select) {
         select.accept(new SelectReturnBaseEntityColumnVisitor(null));
         select.reSetAstMetaData();
         return select.toString();
     }
 
-    public static String selectFieldFilling(String sql, Set<String> tableNameSet) {
-        Curd parse = CurdUtils.parse(sql, true);
+    public String selectFieldFilling(String sql, Set<String> tableNameSet) {
+        Curd parse = CurdUtils.parse(sql, functionEvaluator, true);
         if (!(parse instanceof Select)) {
             return parse.toString();
         }
@@ -45,14 +49,14 @@ public class FieldFillingConvertor {
         return selectFieldFilling((Select) parse, tableNameSet);
     }
 
-    public static String selectFieldFilling(Select select, Set<String> tableNameSet) {
+    public String selectFieldFilling(Select select, Set<String> tableNameSet) {
         select.accept(new SelectReturnBaseEntityColumnVisitor(tableNameSet));
         select.reSetAstMetaData();
         return select.toString();
     }
 
-    public static String insertFieldFilling(String sql, FieldFillingContext context) {
-        Curd parse = CurdUtils.parse(sql, true);
+    public String insertFieldFilling(String sql, FieldFillingContext context) {
+        Curd parse = CurdUtils.parse(sql, functionEvaluator, true);
         if (!(parse instanceof Insert)) {
             return parse.toString();
         }
@@ -60,7 +64,7 @@ public class FieldFillingConvertor {
         return insertFieldFilling((Insert) parse, context);
     }
 
-    public static String insertFieldFilling(Insert insert, FieldFillingContext context) {
+    public String insertFieldFilling(Insert insert, FieldFillingContext context) {
         Curd curd = insert.getInsertRep();
 
         if (curd instanceof InsertSelectRep) {
@@ -71,22 +75,32 @@ public class FieldFillingConvertor {
             List<AssignmentList.Entry> entryList = assignmentList.getEntryList();
             entryList.add(new AssignmentList.Entry(FilledFillingConst.CREATOR_TOKEN, newLiteral(TokenType.STRING, context.getCreator())));
             entryList.add(new AssignmentList.Entry(FilledFillingConst.CREATOR_NAME_TOKEN, newLiteral(TokenType.STRING, context.getCreatorName())));
+            // createTime类型是String，但是TokenType不能是STRING，否则会被''包裹。
             entryList.add(new AssignmentList.Entry(FilledFillingConst.CREATE_TIME_TOKEN, newLiteral(TokenType.INTEGER, context.getCreateTime())));
             entryList.add(new AssignmentList.Entry(FilledFillingConst.MODIFIER_TOKEN, newLiteral(TokenType.STRING, context.getModifier())));
             entryList.add(new AssignmentList.Entry(FilledFillingConst.MODIFIER_NAME_TOKEN, newLiteral(TokenType.STRING, context.getModifierName())));
+            // createTime类型是String，但是TokenType不能是STRING，否则会被''包裹。
             entryList.add(new AssignmentList.Entry(FilledFillingConst.MODIFY_TIME_TOKEN, newLiteral(TokenType.INTEGER, context.getModifyTime())));
-            entryList.add(new AssignmentList.Entry(FilledFillingConst.REMARK_TOKEN, newLiteral(TokenType.STRING, context.getRemark())));
+            String remark = context.getRemark();
+            if (remark != null) {
+                entryList.add(new AssignmentList.Entry(FilledFillingConst.REMARK_TOKEN, newLiteral(TokenType.STRING, remark)));
+            }
         } else if (curd instanceof InsertValuesRep) {
             InsertValuesRep insertValuesRep = (InsertValuesRep) curd;
             List<List<Curd>> curdListList = insertValuesRep.getCurdListList();
+            String remark = context.getRemark();
             for (List<Curd> curdList : curdListList) {
                 curdList.add(newLiteral(TokenType.STRING, context.getCreator()));
                 curdList.add(newLiteral(TokenType.STRING, context.getCreatorName()));
+                // createTime类型是String，但是TokenType不能是STRING，否则会被''包裹。
                 curdList.add(newLiteral(TokenType.INTEGER, context.getCreateTime()));
                 curdList.add(newLiteral(TokenType.STRING, context.getModifier()));
                 curdList.add(newLiteral(TokenType.STRING, context.getModifierName()));
+                // createTime类型是String，但是TokenType不能是STRING，否则会被''包裹。
                 curdList.add(newLiteral(TokenType.INTEGER, context.getModifyTime()));
-                curdList.add(newLiteral(TokenType.STRING, context.getRemark()));
+                if (remark != null) {
+                    curdList.add(newLiteral(TokenType.STRING, remark));
+                }
             }
             List<Token> columnList = insertValuesRep.getColumnList();
             columnList.add(FilledFillingConst.CREATOR_TOKEN);
@@ -95,14 +109,16 @@ public class FieldFillingConvertor {
             columnList.add(FilledFillingConst.MODIFIER_TOKEN);
             columnList.add(FilledFillingConst.MODIFIER_NAME_TOKEN);
             columnList.add(FilledFillingConst.MODIFY_TIME_TOKEN);
-            columnList.add(FilledFillingConst.REMARK_TOKEN);
+            if (remark != null) {
+                columnList.add(FilledFillingConst.REMARK_TOKEN);
+            }
         }
         insert.reSetAstMetaData();
         return insert.toString();
     }
 
-    public static String updateFieldFilling(String sql, FieldFillingContext context) {
-        Curd parse = CurdUtils.parse(sql, true);
+    public String updateFieldFilling(String sql, FieldFillingContext context) {
+        Curd parse = CurdUtils.parse(sql, functionEvaluator, true);
         if (!(parse instanceof Update)) {
             return parse.toString();
         }
@@ -110,11 +126,12 @@ public class FieldFillingConvertor {
         return updateFieldFilling((Update) parse, context);
     }
 
-    public static String updateFieldFilling(Update update, FieldFillingContext context) {
+    public String updateFieldFilling(Update update, FieldFillingContext context) {
         AssignmentList assignmentList = (AssignmentList) update.getAssignmentList();
         List<AssignmentList.Entry> entryList = assignmentList.getEntryList();
         entryList.add(new AssignmentList.Entry(FilledFillingConst.MODIFIER_TOKEN, newLiteral(TokenType.STRING, context.getModifier())));
         entryList.add(new AssignmentList.Entry(FilledFillingConst.MODIFIER_NAME_TOKEN, newLiteral(TokenType.STRING, context.getModifierName())));
+        // createTime类型是String，但是TokenType不能是STRING，否则会被''包裹。
         entryList.add(new AssignmentList.Entry(FilledFillingConst.MODIFY_TIME_TOKEN, newLiteral(TokenType.INTEGER, context.getModifyTime())));
         String remark = context.getRemark();
         if (remark != null) {

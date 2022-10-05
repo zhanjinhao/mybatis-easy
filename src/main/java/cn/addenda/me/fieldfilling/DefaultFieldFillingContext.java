@@ -26,8 +26,8 @@ public class DefaultFieldFillingContext implements FieldFillingContext {
     }
 
     @Override
-    public long getCreateTime() {
-        return System.currentTimeMillis();
+    public Object getCreateTime() {
+        return "now(3)";
     }
 
     @Override
@@ -41,8 +41,8 @@ public class DefaultFieldFillingContext implements FieldFillingContext {
     }
 
     @Override
-    public long getModifyTime() {
-        return System.currentTimeMillis();
+    public Object getModifyTime() {
+        return "now(3)";
     }
 
     @Override

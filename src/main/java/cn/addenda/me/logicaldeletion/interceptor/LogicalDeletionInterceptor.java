@@ -1,5 +1,6 @@
 package cn.addenda.me.logicaldeletion.interceptor;
 
+import cn.addenda.me.fieldfilling.FieldFillingException;
 import cn.addenda.me.idfilling.IdFillingException;
 import cn.addenda.me.logicaldeletion.LogicalDeletionException;
 import cn.addenda.me.logicaldeletion.annotation.LogicalDeletionController;
@@ -11,6 +12,9 @@ import cn.addenda.ro.grammar.ast.create.Insert;
 import cn.addenda.ro.grammar.ast.delete.Delete;
 import cn.addenda.ro.grammar.ast.expression.Curd;
 import cn.addenda.ro.grammar.ast.update.Update;
+import cn.addenda.ro.grammar.function.descriptor.FunctionDescriptor;
+import cn.addenda.ro.grammar.function.evaluator.DefaultFunctionEvaluator;
+import cn.addenda.ro.grammar.function.evaluator.FunctionEvaluator;
 import cn.addenda.ro.grammar.lexical.token.Token;
 import org.apache.ibatis.cache.CacheKey;
 import org.apache.ibatis.executor.Executor;
@@ -21,6 +25,8 @@ import org.apache.ibatis.plugin.*;
 import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -38,10 +44,13 @@ import java.util.stream.Collectors;
 })
 public class LogicalDeletionInterceptor implements Interceptor {
 
-    private static final String LOGICAL_DELETION_TABLE_NAME_SET = "logicalDeletionTableNameSet";
     private final Set<String> logicalDeletionTableNameSet = new HashSet<>();
 
     private final Map<String, LogicalDeletionController> logicalDeletionControllerMap = new ConcurrentHashMap<>();
+
+    private FunctionEvaluator<? extends FunctionDescriptor> functionEvaluator;
+
+    private LogicalDeletionConvertor logicalDeletionConvertor;
 
     @Override
     public Object intercept(Invocation invocation) throws Throwable {
@@ -69,38 +78,38 @@ public class LogicalDeletionInterceptor implements Interceptor {
     private String processSql(String sql, MappedStatement ms) {
         SqlCommandType sqlCommandType = ms.getSqlCommandType();
         if (SqlCommandType.SELECT.equals(sqlCommandType)) {
-            return LogicalDeletionConvertor.selectLogically(sql, logicalDeletionTableNameSet);
+            return logicalDeletionConvertor.selectLogically(sql, logicalDeletionTableNameSet);
         } else if (SqlCommandType.INSERT.equals(sqlCommandType)) {
-            Curd parse = CurdUtils.parse(sql, true);
+            Curd parse = CurdUtils.parse(sql, functionEvaluator, true);
             if (parse instanceof Insert) {
                 Insert insert = (Insert) parse;
                 Token tableName = insert.getTableName();
                 if (logicalDeletionTableNameSet.contains(String.valueOf(tableName.getLiteral()))) {
-                    return LogicalDeletionConvertor.insertLogically(insert);
+                    return logicalDeletionConvertor.insertLogically(insert);
                 }
                 return null;
             } else {
                 throw new LogicalDeletionException("Mybatis SqlCommandType.INSERT 应该执行 INSERT 语句！");
             }
         } else if (SqlCommandType.UPDATE.equals(sqlCommandType)) {
-            Curd parse = CurdUtils.parse(sql, true);
+            Curd parse = CurdUtils.parse(sql, functionEvaluator, true);
             if (parse instanceof Update) {
                 Update update = (Update) parse;
                 Token tableName = update.getTableName();
                 if (logicalDeletionTableNameSet.contains(String.valueOf(tableName.getLiteral()))) {
-                    return LogicalDeletionConvertor.updateLogically(update);
+                    return logicalDeletionConvertor.updateLogically(update);
                 }
                 return null;
             } else {
                 throw new LogicalDeletionException("Mybatis SqlCommandType.UPDATE 应该执行 UPDATE 语句！");
             }
         } else if (SqlCommandType.DELETE.equals(sqlCommandType)) {
-            Curd parse = CurdUtils.parse(sql, true);
+            Curd parse = CurdUtils.parse(sql, functionEvaluator, true);
             if (parse instanceof Delete) {
                 Delete update = (Delete) parse;
                 Token tableName = update.getTableName();
                 if (logicalDeletionTableNameSet.contains(String.valueOf(tableName.getLiteral()))) {
-                    return LogicalDeletionConvertor.deleteLogically(update);
+                    return logicalDeletionConvertor.deleteLogically(update);
                 }
                 return null;
             } else {
@@ -132,11 +141,43 @@ public class LogicalDeletionInterceptor implements Interceptor {
 
     @Override
     public void setProperties(Properties properties) {
-        String tableNameSet = properties.getProperty(LOGICAL_DELETION_TABLE_NAME_SET);
+        String tableNameSet = properties.getProperty("tableNameSet");
         if (tableNameSet == null) {
             return;
         }
         logicalDeletionTableNameSet.addAll(Arrays.stream(tableNameSet.split(",")).collect(Collectors.toSet()));
+
+        String aFunctionEvaluator = properties.getProperty("functionEvaluator");
+        if (aFunctionEvaluator != null) {
+            try {
+                Class<?> aClass = Class.forName(aFunctionEvaluator);
+                if (!FunctionEvaluator.class.isAssignableFrom(aClass)) {
+                    throw new FieldFillingException(aFunctionEvaluator + "不是cn.addenda.ro.grammar.function.evaluator.FunctionEvaluator的子类!");
+                }
+                this.functionEvaluator = newInstance((Class<? extends FunctionEvaluator>) aClass);
+            } catch (Exception e) {
+                throw new FieldFillingException("FunctionEvaluator初始化失败：" + aFunctionEvaluator, e);
+            }
+        } else {
+            this.functionEvaluator = DefaultFunctionEvaluator.getInstance();
+        }
+
+        logicalDeletionConvertor = new LogicalDeletionConvertor(functionEvaluator);
+    }
+
+    private <T> T newInstance(Class<? extends T> aClass) {
+        try {
+            Method[] methods = aClass.getMethods();
+            for (Method method : methods) {
+                if (method.getName().equals("getInstance") && Modifier.isStatic(method.getModifiers()) &&
+                        method.getParameterCount() == 0) {
+                    return (T) method.invoke(null);
+                }
+            }
+            return aClass.newInstance();
+        } catch (Exception e) {
+            throw new FieldFillingException("FieldFillingContext初始化失败：" + aClass.getName(), e);
+        }
     }
 
 }

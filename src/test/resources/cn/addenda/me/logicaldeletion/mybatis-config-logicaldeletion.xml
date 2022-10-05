@@ -17,7 +17,7 @@
             <property name="idGenerator" value="cn.addenda.me.idfilling.idgenerator.NanoTimeIdGenerator"/>
         </plugin>
         <plugin interceptor="cn.addenda.me.logicaldeletion.interceptor.LogicalDeletionInterceptor">
-            <property name="logicalDeletionTableNameSet" value="t_course"/>
+            <property name="tableNameSet" value="t_course"/>
         </plugin>
     </plugins>
 

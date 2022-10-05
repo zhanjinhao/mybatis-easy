@@ -13,6 +13,7 @@ import cn.addenda.ro.grammar.ast.expression.Logic;
 import cn.addenda.ro.grammar.ast.expression.WhereSeg;
 import cn.addenda.ro.grammar.ast.retrieve.Select;
 import cn.addenda.ro.grammar.ast.update.Update;
+import cn.addenda.ro.grammar.function.evaluator.FunctionEvaluator;
 import cn.addenda.ro.grammar.lexical.token.Token;
 import cn.addenda.ro.grammar.lexical.token.TokenType;
 import cn.addenda.ro.grammar.util.ReflectUtils;
@@ -27,12 +28,14 @@ import java.util.Set;
  */
 public class LogicalDeletionConvertor {
 
-    private LogicalDeletionConvertor() {
+    private final FunctionEvaluator<?> functionEvaluator;
 
+    public LogicalDeletionConvertor(FunctionEvaluator<?> functionEvaluator) {
+        this.functionEvaluator = functionEvaluator;
     }
 
-    public static String insertLogically(String sql) {
-        Curd parse = CurdUtils.parse(sql, true);
+    public String insertLogically(String sql) {
+        Curd parse = CurdUtils.parse(sql, functionEvaluator, true);
         if (!(parse instanceof Insert)) {
             return parse.toString();
         }
@@ -40,7 +43,7 @@ public class LogicalDeletionConvertor {
         return insertLogically((Insert) parse);
     }
 
-    public static String insertLogically(Insert insert) {
+    public String insertLogically(Insert insert) {
         Curd curd = insert.getInsertRep();
 
         if (curd instanceof InsertSelectRep) {
@@ -63,8 +66,8 @@ public class LogicalDeletionConvertor {
         return insert.toString();
     }
 
-    public static String deleteLogically(String sql) {
-        Curd parse = CurdUtils.parse(sql, true);
+    public String deleteLogically(String sql) {
+        Curd parse = CurdUtils.parse(sql, functionEvaluator, true);
         if (!(parse instanceof Delete)) {
             return parse.toString();
         }
@@ -72,7 +75,7 @@ public class LogicalDeletionConvertor {
         return deleteLogically((Delete) parse);
     }
 
-    public static String deleteLogically(Delete delete) {
+    public String deleteLogically(Delete delete) {
         Token tableName = delete.getTableName();
         Curd whereSeg = delete.getWhereSeg();
         List<AssignmentList.Entry> entryList = new ArrayList<>();
@@ -82,22 +85,22 @@ public class LogicalDeletionConvertor {
         return update.toString();
     }
 
-    public static String selectLogically(String sql) {
-        Curd select = CurdUtils.parse(sql, true);
+    public String selectLogically(String sql) {
+        Curd select = CurdUtils.parse(sql, functionEvaluator, true);
         if (!(select instanceof Select)) {
             return select.toString();
         }
         return selectLogically((Select) select);
     }
 
-    public static String selectLogically(Select select) {
+    public String selectLogically(Select select) {
         Curd accept = select.accept(new SelectAddDeleteConditionVisitor());
         accept.reSetAstMetaData();
         return accept.toString();
     }
 
-    public static String selectLogically(String sql, Set<String> tableNameSet) {
-        Curd select = CurdUtils.parse(sql, true);
+    public String selectLogically(String sql, Set<String> tableNameSet) {
+        Curd select = CurdUtils.parse(sql, functionEvaluator, true);
         if (!(select instanceof Select)) {
             return select.toString();
         }
@@ -105,14 +108,14 @@ public class LogicalDeletionConvertor {
         return selectLogically((Select) select, tableNameSet);
     }
 
-    public static String selectLogically(Select select, Set<String> tableNameSet) {
+    public String selectLogically(Select select, Set<String> tableNameSet) {
         Curd accept = select.accept(new SelectAddDeleteConditionVisitor(tableNameSet));
         accept.reSetAstMetaData();
         return accept.toString();
     }
 
-    public static String updateLogically(String sql) {
-        Curd parse = CurdUtils.parse(sql, true);
+    public String updateLogically(String sql) {
+        Curd parse = CurdUtils.parse(sql, functionEvaluator, true);
         if (!(parse instanceof Update)) {
             return parse.toString();
         }
@@ -120,7 +123,7 @@ public class LogicalDeletionConvertor {
         return updateLogically((Update) parse);
     }
 
-    public static String updateLogically(Update update) {
+    public String updateLogically(Update update) {
         WhereSeg whereSeg = (WhereSeg) update.getWhereSeg();
         if (whereSeg == null) {
             ReflectUtils.setFieldValue(update, "whereSeg", new WhereSeg(LogicalDeletionConst.EQUAL_ZERO.deepClone()));

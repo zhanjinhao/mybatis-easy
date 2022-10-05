@@ -12,13 +12,13 @@ public interface FieldFillingContext {
 
     String getCreatorName();
 
-    long getCreateTime();
+    Object getCreateTime();
 
     String getModifier();
 
     String getModifierName();
 
-    long getModifyTime();
+    Object getModifyTime();
 
     String getRemark();
 

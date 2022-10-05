@@ -1,5 +1,7 @@
 package cn.addenda.me.fieldfilling.sql;
 
+import cn.addenda.ro.grammar.function.evaluator.DefaultFunctionEvaluator;
+
 /**
  * @author addenda
  * @datetime 2022/8/9 18:24
@@ -238,8 +240,9 @@ public class FieldFillingConvertorSelectTest {
     }
 
     private static void test() {
+        FieldFillingConvertor fieldFillingConvertor = new FieldFillingConvertor(DefaultFunctionEvaluator.getInstance());
         for (String sql : sqls) {
-            System.out.println(FieldFillingConvertor.selectFieldFilling(sql));
+            System.out.println(fieldFillingConvertor.selectFieldFilling(sql));
         }
     }
 
