@@ -7,8 +7,8 @@ package cn.addenda.me.idfilling.idgenerator;
 public class NanoTimeIdGenerator implements IdGenerator {
 
     @Override
-    public String nextId(String scopeName) {
-        return scopeName + ":" + System.nanoTime();
+    public Object nextId(String scopeName) {
+        return System.nanoTime();
     }
 
 }

@@ -6,6 +6,6 @@ package cn.addenda.me.idfilling.idgenerator;
  */
 public interface IdGenerator {
 
-    String nextId(String scopeName);
+    Object nextId(String scopeName);
 
 }
