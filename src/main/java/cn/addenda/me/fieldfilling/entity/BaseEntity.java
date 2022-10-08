@@ -8,6 +8,14 @@ import java.time.LocalDateTime;
  */
 public abstract class BaseEntity {
 
+    public static final String N_CREATOR = "creator";
+    public static final String N_CREATOR_NAME = "creatorName";
+    public static final String N_CREATE_TIME = "createTime";
+    public static final String N_MODIFIER = "modifier";
+    public static final String N_MODIFIER_NAME = "modifierName";
+    public static final String N_MODIFY_TIME = "modifyTime";
+    public static final String N_REMARK = "remark";
+
     private String creator;
     private String creatorName;
     private LocalDateTime createTime;
