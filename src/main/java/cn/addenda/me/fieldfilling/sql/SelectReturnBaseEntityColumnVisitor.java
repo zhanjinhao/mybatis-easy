@@ -9,6 +9,7 @@ import cn.addenda.ro.grammar.lexical.token.Token;
 import cn.addenda.ro.grammar.lexical.token.TokenType;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.*;
 
 /**
@@ -24,6 +25,9 @@ class SelectReturnBaseEntityColumnVisitor extends SelectVisitor<List<ColumnRep>>
         Class<BaseEntity> baseEntityClass = BaseEntity.class;
         Field[] declaredFields = baseEntityClass.getDeclaredFields();
         for (Field field : declaredFields) {
+            if (Modifier.isFinal(field.getModifiers()) || Modifier.isStatic(field.getModifiers())) {
+                continue;
+            }
             String name = field.getName();
             String columnName = camelCaseToSnakeCase(name);
             COLUMN_NAME_SET.add(columnName);

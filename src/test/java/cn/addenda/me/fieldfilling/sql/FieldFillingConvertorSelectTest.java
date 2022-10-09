@@ -9,6 +9,12 @@ import cn.addenda.ro.grammar.function.evaluator.DefaultFunctionEvaluator;
 public class FieldFillingConvertorSelectTest {
 
     static String[] sqls = new String[]{
+            "        SELECT 1\n" +
+                    "        FROM t_user\n" +
+                    "        WHERE user_id = #{userId,jdbcType=VARCHAR}\n" +
+                    "        limit 1\n" +
+                    "        for\n" +
+                    "        update",
 
             "select a from (select a from A) aa where a > 100 and a < 50",
 
