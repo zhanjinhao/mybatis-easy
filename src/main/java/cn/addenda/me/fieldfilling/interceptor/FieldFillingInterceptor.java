@@ -108,10 +108,11 @@ public class FieldFillingInterceptor implements Interceptor {
                 String mode = aTableNameSet[0];
                 if (DQLFieldFilling.ALL.equals(mode)) {
                     return fieldFillingConvertor.selectFieldFilling(select, this.tableNameSet);
-                } else if (DQLFieldFilling.IGNORE.equals(mode)) {
+                } else if (DQLFieldFilling.EMPTY.equals(mode)) {
                     return null;
                 }
             }
+            // 使用自定义的tableNameSet。
             return fieldFillingConvertor.selectFieldFilling(select, new HashSet<>(Arrays.asList(aTableNameSet)));
         } else {
             throw new FieldFillingException("Mybatis SqlCommandType.SELECT 应该执行 SELECT 语句！");

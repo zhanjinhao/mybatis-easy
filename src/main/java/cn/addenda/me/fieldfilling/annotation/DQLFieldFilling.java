@@ -9,7 +9,7 @@ public @interface DQLFieldFilling {
 
     String ALL = "all";
 
-    String IGNORE = "ignore";
+    String EMPTY = "empty";
 
     String[] tableNameSet() default ALL;
 
