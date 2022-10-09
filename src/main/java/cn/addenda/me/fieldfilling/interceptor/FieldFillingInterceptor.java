@@ -17,6 +17,7 @@ import cn.addenda.ro.grammar.function.descriptor.FunctionDescriptor;
 import cn.addenda.ro.grammar.function.evaluator.DefaultFunctionEvaluator;
 import cn.addenda.ro.grammar.function.evaluator.FunctionEvaluator;
 import cn.addenda.ro.grammar.lexical.token.Token;
+import cn.addenda.ro.utils.SqlUtils;
 import org.apache.ibatis.cache.CacheKey;
 import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.mapping.BoundSql;
@@ -90,6 +91,10 @@ public class FieldFillingInterceptor implements Interceptor {
             DMLFieldFilling dmlFieldFilling = extractAnnotation(msId, DMLFieldFilling.class);
             return processUpdate(oldSql, dmlFieldFilling);
         } else if (SqlCommandType.DELETE.equals(sqlCommandType)) {
+            // 如果DELETE类型获取到了update sql，认为sql是逻辑删除。
+            if (SqlUtils.isUpdateSql(oldSql)) {
+                return processUpdate(oldSql, extractAnnotation(msId, DMLFieldFilling.class));
+            }
             return oldSql;
         } else {
             throw new FieldFillingException("无法识别的Mybatis SqlCommandType：" + sqlCommandType);
@@ -97,8 +102,8 @@ public class FieldFillingInterceptor implements Interceptor {
     }
 
     private String processSelect(String sql, DQLFieldFilling dqlFieldFilling) {
-        Curd parse = CurdUtils.parse(sql, functionEvaluator, true);
-        if (parse instanceof Select) {
+        if (SqlUtils.isSelectSql(sql)) {
+            Curd parse = CurdUtils.parse(sql, functionEvaluator, true);
             Select select = (Select) parse;
             if (dqlFieldFilling == null) {
                 return fieldFillingConvertor.selectFieldFilling(select, tableNameSet);
@@ -145,8 +150,8 @@ public class FieldFillingInterceptor implements Interceptor {
             }
         }
 
-        Curd parse = CurdUtils.parse(sql, functionEvaluator, true);
-        if (parse instanceof Update) {
+        if (SqlUtils.isUpdateSql(sql)) {
+            Curd parse = CurdUtils.parse(sql, functionEvaluator, true);
             Update update = (Update) parse;
             Token tableName = update.getTableName();
             if (tableNameSet.contains(String.valueOf(tableName.getLiteral()))) {
@@ -171,8 +176,8 @@ public class FieldFillingInterceptor implements Interceptor {
             }
         }
 
-        Curd parse = CurdUtils.parse(sql, functionEvaluator, true);
-        if (parse instanceof Insert) {
+        if (SqlUtils.isInsertSql(sql)) {
+            Curd parse = CurdUtils.parse(sql, functionEvaluator, true);
             Insert insert = (Insert) parse;
             Token tableName = insert.getTableName();
             if (tableNameSet.contains(String.valueOf(tableName.getLiteral()))) {

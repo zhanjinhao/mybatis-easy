@@ -16,6 +16,7 @@ import cn.addenda.ro.grammar.function.descriptor.FunctionDescriptor;
 import cn.addenda.ro.grammar.function.evaluator.DefaultFunctionEvaluator;
 import cn.addenda.ro.grammar.function.evaluator.FunctionEvaluator;
 import cn.addenda.ro.grammar.lexical.token.Token;
+import cn.addenda.ro.utils.SqlUtils;
 import org.apache.ibatis.cache.CacheKey;
 import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.mapping.BoundSql;
@@ -80,8 +81,8 @@ public class LogicalDeletionInterceptor implements Interceptor {
         if (SqlCommandType.SELECT.equals(sqlCommandType)) {
             return logicalDeletionConvertor.selectLogically(sql, logicalDeletionTableNameSet);
         } else if (SqlCommandType.INSERT.equals(sqlCommandType)) {
-            Curd parse = CurdUtils.parse(sql, functionEvaluator, true);
-            if (parse instanceof Insert) {
+            if (SqlUtils.isInsertSql(sql)) {
+                Curd parse = CurdUtils.parse(sql, functionEvaluator, true);
                 Insert insert = (Insert) parse;
                 Token tableName = insert.getTableName();
                 if (logicalDeletionTableNameSet.contains(String.valueOf(tableName.getLiteral()))) {
@@ -92,8 +93,8 @@ public class LogicalDeletionInterceptor implements Interceptor {
                 throw new LogicalDeletionException("Mybatis SqlCommandType.INSERT 应该执行 INSERT 语句！");
             }
         } else if (SqlCommandType.UPDATE.equals(sqlCommandType)) {
-            Curd parse = CurdUtils.parse(sql, functionEvaluator, true);
-            if (parse instanceof Update) {
+            if (SqlUtils.isUpdateSql(sql)) {
+                Curd parse = CurdUtils.parse(sql, functionEvaluator, true);
                 Update update = (Update) parse;
                 Token tableName = update.getTableName();
                 if (logicalDeletionTableNameSet.contains(String.valueOf(tableName.getLiteral()))) {
@@ -104,8 +105,8 @@ public class LogicalDeletionInterceptor implements Interceptor {
                 throw new LogicalDeletionException("Mybatis SqlCommandType.UPDATE 应该执行 UPDATE 语句！");
             }
         } else if (SqlCommandType.DELETE.equals(sqlCommandType)) {
-            Curd parse = CurdUtils.parse(sql, functionEvaluator, true);
-            if (parse instanceof Delete) {
+            if (SqlUtils.isDeleteSql(sql)) {
+                Curd parse = CurdUtils.parse(sql, functionEvaluator, true);
                 Delete update = (Delete) parse;
                 Token tableName = update.getTableName();
                 if (logicalDeletionTableNameSet.contains(String.valueOf(tableName.getLiteral()))) {
