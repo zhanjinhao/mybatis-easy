@@ -7,10 +7,7 @@ import cn.addenda.ro.grammar.ast.create.InsertSelectRep;
 import cn.addenda.ro.grammar.ast.create.InsertSetRep;
 import cn.addenda.ro.grammar.ast.create.InsertValuesRep;
 import cn.addenda.ro.grammar.ast.delete.Delete;
-import cn.addenda.ro.grammar.ast.expression.AssignmentList;
-import cn.addenda.ro.grammar.ast.expression.Curd;
-import cn.addenda.ro.grammar.ast.expression.Logic;
-import cn.addenda.ro.grammar.ast.expression.WhereSeg;
+import cn.addenda.ro.grammar.ast.expression.*;
 import cn.addenda.ro.grammar.ast.retrieve.Select;
 import cn.addenda.ro.grammar.ast.update.Update;
 import cn.addenda.ro.grammar.function.evaluator.FunctionEvaluator;
@@ -77,9 +74,17 @@ public class LogicalDeletionConvertor {
 
     public String deleteLogically(Delete delete) {
         Token tableName = delete.getTableName();
-        Curd whereSeg = delete.getWhereSeg();
         List<AssignmentList.Entry> entryList = new ArrayList<>();
-        entryList.add(new AssignmentList.Entry(LogicalDeletionConst.DELETE_COLUMN.getName(), LogicalDeletionConst.ONE.deepClone()));
+        entryList.add(new AssignmentList.Entry(
+                LogicalDeletionConst.DELETE_COLUMN.getName().deepClone(), LogicalDeletionConst.ONE.deepClone()));
+        WhereSeg whereSeg = (WhereSeg) delete.getWhereSeg();
+        if (whereSeg == null) {
+            whereSeg = new WhereSeg(LogicalDeletionConst.EQUAL_ZERO.deepClone());
+        } else {
+            whereSeg = new WhereSeg(new Logic(
+                    new Grouping(whereSeg.getLogic().deepClone()),
+                    new Token(TokenType.AND, "and"), LogicalDeletionConst.EQUAL_ZERO.deepClone()));
+        }
         Update update = new Update(tableName, new AssignmentList(entryList), whereSeg);
         update.reSetAstMetaData();
         return update.toString();
