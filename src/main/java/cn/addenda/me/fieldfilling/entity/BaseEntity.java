@@ -1,11 +1,16 @@
 package cn.addenda.me.fieldfilling.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import java.time.LocalDateTime;
 
 /**
  * @author addenda
  * @datetime 2022/8/16 20:40
  */
+@JsonIgnoreProperties({
+        BaseEntity.N_CREATOR, BaseEntity.N_CREATOR_NAME, BaseEntity.N_CREATE_TIME, BaseEntity.N_MODIFIER,
+        BaseEntity.N_MODIFIER_NAME, BaseEntity.N_MODIFY_TIME, BaseEntity.N_REMARK})
 public abstract class BaseEntity {
 
     public static final String N_CREATOR = "creator";

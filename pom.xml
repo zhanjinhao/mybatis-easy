@@ -16,9 +16,16 @@
         <mysql.version>8.0.25</mysql.version>
         <pagehelper.version>5.2.0</pagehelper.version>
         <slf4j.version>1.7.36</slf4j.version>
+        <business-easy.version>2.0.0</business-easy.version>
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>cn.addenda</groupId>
+            <artifactId>business-easy</artifactId>
+            <version>${business-easy.version}</version>
+        </dependency>
+
         <!--mybatis依赖-->
         <dependency>
             <groupId>org.mybatis</groupId>
