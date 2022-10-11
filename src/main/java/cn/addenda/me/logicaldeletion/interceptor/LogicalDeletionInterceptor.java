@@ -60,23 +60,23 @@ public class LogicalDeletionInterceptor implements Interceptor {
         BoundSql boundSql = ms.getBoundSql(args[1]);
         String oldSql = boundSql.getSql();
 
-        String msId = ms.getId();
-        LogicalDeletionController logicalDeletionController = extractIdScopeController(msId);
-        if (logicalDeletionController != null && logicalDeletionController.suppress()) {
-            return invocation.proceed();
-        }
-
         String newSql = processSql(oldSql, ms);
         // newSql不为空 且 新旧sql不一致 的才需要进行sql替换
         if (newSql == null || oldSql.replaceAll("\\s+", "").equals(newSql.replaceAll("\\s+", ""))) {
             return invocation.proceed();
         }
 
-        MybatisUtils.executorInterceptorReplaceSql(invocation, boundSql, newSql);
+        MybatisUtils.executorInterceptorReplaceSql(invocation, newSql);
         return invocation.proceed();
     }
 
     private String processSql(String sql, MappedStatement ms) {
+        String msId = ms.getId();
+        LogicalDeletionController logicalDeletionController = extractIdScopeController(msId);
+        if (logicalDeletionController != null && logicalDeletionController.suppress()) {
+            return null;
+        }
+
         SqlCommandType sqlCommandType = ms.getSqlCommandType();
         if (SqlCommandType.SELECT.equals(sqlCommandType)) {
             return logicalDeletionConvertor.selectLogically(sql, logicalDeletionTableNameSet);

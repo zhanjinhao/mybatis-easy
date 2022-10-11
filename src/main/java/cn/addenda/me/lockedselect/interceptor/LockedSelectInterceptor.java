@@ -28,9 +28,7 @@ public class LockedSelectInterceptor implements Interceptor {
 
     @Override
     public Object intercept(Invocation invocation) throws Throwable {
-        Object[] args = invocation.getArgs();
-        MappedStatement ms = (MappedStatement) args[0];
-        BoundSql boundSql = ms.getBoundSql(args[1]);
+        BoundSql boundSql = MybatisUtils.getBoundSql(invocation);
         String oldSql = boundSql.getSql();
 
         String lock = LockedSelectHelper.getLock();
@@ -40,7 +38,7 @@ public class LockedSelectInterceptor implements Interceptor {
 
         String newSql = processSql(oldSql, lock);
 
-        MybatisUtils.executorInterceptorReplaceSql(invocation, boundSql, newSql);
+        MybatisUtils.executorInterceptorReplaceSql(invocation, newSql);
         return invocation.proceed();
     }
 

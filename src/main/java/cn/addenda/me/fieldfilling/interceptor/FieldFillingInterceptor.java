@@ -66,15 +66,13 @@ public class FieldFillingInterceptor implements Interceptor {
 
         String oldSql = boundSql.getSql();
 
-        String msId = ms.getId();
-
         String newSql = processSql(oldSql, ms);
         // newSql不为空 且 新旧sql不一致 的才需要进行sql替换
         if (newSql == null || oldSql.replaceAll("\\s+", "").equals(newSql.replaceAll("\\s+", ""))) {
             return invocation.proceed();
         }
 
-        MybatisUtils.executorInterceptorReplaceSql(invocation, boundSql, newSql);
+        MybatisUtils.executorInterceptorReplaceSql(invocation, newSql);
         return invocation.proceed();
     }
 

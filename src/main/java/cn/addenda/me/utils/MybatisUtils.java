@@ -78,13 +78,19 @@ public class MybatisUtils {
         return builder.build();
     }
 
+    public static BoundSql getBoundSql(Invocation invocation) {
+        Object[] args = invocation.getArgs();
+        MappedStatement ms = (MappedStatement) args[0];
+        return ms.getBoundSql(args[1]);
+    }
+
     /**
-     *
      * @param invocation
-     * @param boundSql
      * @param newSql
      */
-    public static void executorInterceptorReplaceSql(Invocation invocation, BoundSql boundSql, String newSql) {
+    public static void executorInterceptorReplaceSql(Invocation invocation, String newSql) {
+        BoundSql boundSql = getBoundSql(invocation);
+
         MybatisUtils.boundSqlSetSql(boundSql, newSql);
         SqlSource newSqlSource = MybatisUtils.newBoundSqlSqlSource(boundSql);
 
@@ -102,10 +108,6 @@ public class MybatisUtils {
         }
     }
 
-    public static SqlSource newBoundSqlSqlSource(BoundSql boundSql) {
-        return new BoundSqlSqlSource(boundSql);
-    }
-
     public static void boundSqlSetSql(BoundSql boundSql, String sql) {
         // 该对象没有提供对sql属性的set方法，只能通过反射进行修改
         Class<? extends BoundSql> aClass = boundSql.getClass();
@@ -116,6 +118,10 @@ public class MybatisUtils {
         } catch (Exception e) {
             throw new MyBatisEasyException("替换 BoundSql.sql 失败！", e);
         }
+    }
+
+    public static SqlSource newBoundSqlSqlSource(BoundSql boundSql) {
+        return new BoundSqlSqlSource(boundSql);
     }
 
     private static class BoundSqlSqlSource implements SqlSource {
