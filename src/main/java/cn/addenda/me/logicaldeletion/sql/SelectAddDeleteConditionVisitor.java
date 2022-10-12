@@ -44,9 +44,6 @@ class SelectAddDeleteConditionVisitor extends SelectVisitor<Curd> {
 
         TableSeg tableSeg = (TableSeg) singleSelect.getTableSeg();
         tableSeg.accept(this);
-        SingleSelectAstMetaData astMetaData = (SingleSelectAstMetaData) tableSeg.getAstMetaData();
-        Set<String> physicalViewNameSet = getPhysicalViewNameSet(astMetaData);
-        Set<String> userDefinedViewNameSet = getAvailableViewName(astMetaData);
 
         Curd deleteCondition;
         if (checkIsOuterJoinQuery(singleSelect)) {
@@ -55,6 +52,10 @@ class SelectAddDeleteConditionVisitor extends SelectVisitor<Curd> {
         } else {
             deleteCondition = LogicalDeletionConst.EQUAL_ZERO.deepClone();
         }
+
+        SingleSelectAstMetaData astMetaData = (SingleSelectAstMetaData) tableSeg.getAstMetaData();
+        Set<String> physicalViewNameSet = getPhysicalViewNameSet(astMetaData);
+        Set<String> userDefinedViewNameSet = getAvailableViewName(astMetaData);
 
         WhereSeg whereSeg = (WhereSeg) singleSelect.getWhereSeg();
         // 对于不存在where条件的语法，修改singleSelect的whereSeg属性的值
@@ -80,7 +81,6 @@ class SelectAddDeleteConditionVisitor extends SelectVisitor<Curd> {
     }
 
     private void joinConditionAddDeleteCondition(TableSeg tableSeg) {
-        Curd leftCurd = tableSeg.getLeftCurd();
         TableRep rightCurd = (TableRep) tableSeg.getRightCurd();
         if (rightCurd != null) {
             SingleSelectAstMetaData astMetaData = (SingleSelectAstMetaData) tableSeg.getAstMetaData();
@@ -88,6 +88,7 @@ class SelectAddDeleteConditionVisitor extends SelectVisitor<Curd> {
 
             Set<String> physicalViewNameSet = new HashSet<>();
             // 右孩子不为空，非叶子节点
+            Curd leftCurd = tableSeg.getLeftCurd();
             Curd condition = tableSeg.getCondition();
             if (leftCurd instanceof TableRep) {
                 String leftView = extractTableName((TableRep) leftCurd);
