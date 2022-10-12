@@ -431,7 +431,7 @@ class SelectAddDeleteConditionVisitor extends SelectVisitor<Curd> {
             }
             Curd rightCurd = tableSeg.getRightCurd();
             if (rightCurd instanceof TableSeg) {
-                queue.offer(leftCurd);
+                queue.offer(rightCurd);
             }
         }
         return false;
