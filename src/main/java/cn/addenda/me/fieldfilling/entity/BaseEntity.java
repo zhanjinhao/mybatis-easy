@@ -1,6 +1,10 @@
 package cn.addenda.me.fieldfilling.entity;
 
+import cn.addenda.businesseasy.json.LocalDateTimeStrDeSerializer;
+import cn.addenda.businesseasy.json.LocalDateTimeStrSerializer;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import java.time.LocalDateTime;
 
@@ -23,10 +27,16 @@ public abstract class BaseEntity {
 
     private String creator;
     private String creatorName;
+
+    @JsonSerialize(using = LocalDateTimeStrSerializer.class)
+    @JsonDeserialize(using = LocalDateTimeStrDeSerializer.class)
     private LocalDateTime createTime;
 
     private String modifier;
     private String modifierName;
+
+    @JsonSerialize(using = LocalDateTimeStrSerializer.class)
+    @JsonDeserialize(using = LocalDateTimeStrDeSerializer.class)
     private LocalDateTime modifyTime;
 
     private String remark;
