@@ -26,7 +26,7 @@ public class LockedSelectHelper {
         return LOCK_THREAD_LOCAL.get();
     }
 
-    public static <T> T rLockedSelect(LockedSqlExecutor<T> executor) {
+    public static <T> T rSelect(LockedSqlExecutor<T> executor) {
         try {
             setLock(R_LOCK);
             return executor.execute();
@@ -37,7 +37,7 @@ public class LockedSelectHelper {
         }
     }
 
-    public static <T> T wLockedSelect(LockedSqlExecutor<T> executor) {
+    public static <T> T wSelect(LockedSqlExecutor<T> executor) {
         try {
             setLock(W_LOCK);
             return executor.execute();
@@ -48,18 +48,18 @@ public class LockedSelectHelper {
         }
     }
 
-    public static <T> T lockSelect(String lock, LockedSqlExecutor<T> executor) {
+    public static <T> T select(String lock, LockedSqlExecutor<T> executor) {
         if (W_LOCK.equals(lock)) {
-            return wLockedSelect(executor);
+            return wSelect(executor);
         } else if (R_LOCK.equals(lock)) {
-            return rLockedSelect(executor);
+            return rSelect(executor);
         } else {
             throw new LockedSelectException("不支持的LOCK类型，当前LOCK类型：" + lock + "。");
         }
     }
 
 
-    public static void rLockedSelect(VoidLockedSqlExecutor executor) {
+    public static void rSelect(VoidLockedSqlExecutor executor) {
         try {
             setLock(R_LOCK);
             executor.execute();
@@ -70,7 +70,7 @@ public class LockedSelectHelper {
         }
     }
 
-    public static void wLockedSelect(VoidLockedSqlExecutor executor) {
+    public static void wSelect(VoidLockedSqlExecutor executor) {
         try {
             setLock(W_LOCK);
             executor.execute();
@@ -81,11 +81,11 @@ public class LockedSelectHelper {
         }
     }
 
-    public static void lockSelect(String lock, VoidLockedSqlExecutor executor) {
+    public static void select(String lock, VoidLockedSqlExecutor executor) {
         if (W_LOCK.equals(lock)) {
-            wLockedSelect(executor);
+            wSelect(executor);
         } else if (R_LOCK.equals(lock)) {
-            rLockedSelect(executor);
+            rSelect(executor);
         } else {
             throw new LockedSelectException("不支持的LOCK类型，当前LOCK类型：" + lock + "。");
         }
