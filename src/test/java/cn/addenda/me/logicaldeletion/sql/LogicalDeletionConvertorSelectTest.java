@@ -14,6 +14,11 @@ public class LogicalDeletionConvertorSelectTest {
 
     static String[] sqls = new String[]{
 
+            "select count(*) as a from t_user where sqc = 1 limit 1 for update",
+
+            "select * from t_a left join t_b on t_a.b_id = t_b.id " +
+                    " left join t_c on t_b.c_id = t_c.id",
+
             "select a, b"
                     + "  from tab2 t left join tab3 on t.c = tab3.c and t.d = t.c, (select * from tab5) t5\n"
                     + " where t.m = ?\n"
@@ -236,7 +241,7 @@ public class LogicalDeletionConvertorSelectTest {
                         "from (select * from A) a left join B b on a.id = b.aid " +
                         "where a.id in (select aid from c)";
         LogicalDeletionConvertor logicalDeletionConvertor = new LogicalDeletionConvertor(DefaultFunctionEvaluator.getInstance());
-        System.out.println(logicalDeletionConvertor.selectLogically(sql, asSet("B")));
+        System.out.println(logicalDeletionConvertor.selectLogically(sql, asSet("b")));
     }
 
 
@@ -256,7 +261,7 @@ public class LogicalDeletionConvertorSelectTest {
                 + "      group by ts_group.id";
 
         LogicalDeletionConvertor logicalDeletionConvertor = new LogicalDeletionConvertor(DefaultFunctionEvaluator.getInstance());
-        System.out.println(logicalDeletionConvertor.selectLogically(sql, asSet("ts_group_role", "ts_group")));
+        System.out.println(logicalDeletionConvertor.selectLogically(sql, asSet("ts_group_role", "ts_group", "ts_role")));
 
         /**
          * correct result:

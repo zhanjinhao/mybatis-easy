@@ -68,6 +68,7 @@ class SelectAddDeleteConditionVisitor extends SelectVisitor<Curd> {
         }
         // 对于存在where条件的语法，修改whereSeg的logic属性的值
         else {
+            whereSeg.accept(this);
             Curd logic = whereSeg.getLogic();
             whereSeg.accept(this);
             Curd deleteLogic = createLogic(physicalViewNameSet, userDefinedViewNameSet, deleteCondition);
@@ -78,6 +79,32 @@ class SelectAddDeleteConditionVisitor extends SelectVisitor<Curd> {
         }
 
         return singleSelect;
+    }
+
+
+    /**
+     * 1. from A  ->  A <br/>
+     * 2. from A a  ->  a <br/>
+     * 3. from (select a from A) B  ->  null <br/>
+     * 获取 astMetaData 里物理表对应的view集合，临时表（子查询）会被过滤。
+     */
+    private Set<String> getPhysicalViewNameSet(SingleSelectAstMetaData astMetaData) {
+        // conditionColumnReference 的 Key 是 view，不是table
+        Map<String, Set<String>> conditionColumnReference = astMetaData.getConditionColumnReference();
+        Set<String> viewNameSet = new HashSet<>(conditionColumnReference.keySet());
+        viewNameSet.remove(AstMetaData.UNDETERMINED_TABLE);
+
+        // 查出来所有的不需要执行的
+        // key 是 view，value 是表
+        Map<String, Curd> aliasTableMap = astMetaData.getAliasTableMap();
+        Set<Map.Entry<String, Curd>> entries = aliasTableMap.entrySet();
+        for (Map.Entry<String, Curd> next : entries) {
+            // 如果 value 是子表，其对应的view（别名）是不需要计算条件的
+            if (!next.getValue().getClass().equals(Identifier.class)) {
+                viewNameSet.remove(next.getKey());
+            }
+        }
+        return viewNameSet;
     }
 
     private void joinConditionAddDeleteCondition(TableSeg tableSeg) {
@@ -122,6 +149,31 @@ class SelectAddDeleteConditionVisitor extends SelectVisitor<Curd> {
         }
     }
 
+    private String extractTableName(TableRep tableRep) {
+        Token alias = tableRep.getAlias();
+
+        // curd 是 identifier 或者 select
+        Curd curd = tableRep.getCurd();
+
+        // 当 curd 是 Select 时，这个表不计算
+        if (curd instanceof Select) {
+            return null;
+        }
+
+        if (alias != null) {
+            return String.valueOf(alias.getLiteral());
+        }
+        Identifier table = (Identifier) tableRep.getCurd();
+        return String.valueOf(table.getName().getLiteral());
+    }
+
+    private Set<String> getConditionViewNameSet(AstMetaData astMetaData) {
+        // conditionColumnReference 的 Key 是 view，不是table
+        Map<String, Set<String>> conditionColumnReference = astMetaData.getConditionColumnReference();
+        Set<String> viewNameSet = new HashSet<>(conditionColumnReference.keySet());
+        viewNameSet.remove(AstMetaData.UNDETERMINED_TABLE);
+        return viewNameSet;
+    }
 
     /**
      * 传入的 availableTableNameSet 是表名，但是在SQL中会使用别名，所以这一步是将表名转为别名
@@ -140,6 +192,18 @@ class SelectAddDeleteConditionVisitor extends SelectVisitor<Curd> {
                                 }
                         ).collect(Collectors.toSet());
     }
+
+    private String getViewAliasName(SingleSelectAstMetaData astMetaData, Curd curd) {
+        Map<String, Curd> aliasTableMap = astMetaData.getAliasTableMap();
+        Set<Map.Entry<String, Curd>> entries = aliasTableMap.entrySet();
+        for (Map.Entry<String, Curd> entry : entries) {
+            if (entry.getValue().equals(curd)) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
+
 
     /**
      * @param physicalViewNameSet    SQL里面解析出来的物理表对应的view。（可以计算Logic的集合。）
@@ -182,31 +246,6 @@ class SelectAddDeleteConditionVisitor extends SelectVisitor<Curd> {
         return tableSeg;
     }
 
-    private Set<String> getConditionViewNameSet(AstMetaData astMetaData) {
-        // conditionColumnReference 的 Key 是 view，不是table
-        Map<String, Set<String>> conditionColumnReference = astMetaData.getConditionColumnReference();
-        Set<String> viewNameSet = new HashSet<>(conditionColumnReference.keySet());
-        viewNameSet.remove(AstMetaData.UNDETERMINED_TABLE);
-        return viewNameSet;
-    }
-
-    private String extractTableName(TableRep tableRep) {
-        Token alias = tableRep.getAlias();
-
-        // curd 是 identifier 或者 select
-        Curd curd = tableRep.getCurd();
-
-        // 当 curd 是 Select 时，这个表不计算
-        if (curd instanceof Select) {
-            return null;
-        }
-
-        if (alias != null) {
-            return String.valueOf(alias.getLiteral());
-        }
-        Identifier table = (Identifier) tableRep.getCurd();
-        return String.valueOf(table.getName().getLiteral());
-    }
 
     @Override
     public Curd visitTableRep(TableRep tableRep) {
@@ -298,7 +337,7 @@ class SelectAddDeleteConditionVisitor extends SelectVisitor<Curd> {
 
     @Override
     public Curd visitWindowFunction(WindowFunction windowFunction) {
-        return null;
+        return windowFunction;
     }
 
     @Override
@@ -379,42 +418,6 @@ class SelectAddDeleteConditionVisitor extends SelectVisitor<Curd> {
     @Override
     public Curd visitIsNot(IsNot isNot) {
         return isNot;
-    }
-
-    private String getViewAliasName(SingleSelectAstMetaData astMetaData, Curd curd) {
-        Map<String, Curd> aliasTableMap = astMetaData.getAliasTableMap();
-        Set<Map.Entry<String, Curd>> entries = aliasTableMap.entrySet();
-        for (Map.Entry<String, Curd> entry : entries) {
-            if (entry.getValue().equals(curd)) {
-                return entry.getKey();
-            }
-        }
-        return null;
-    }
-
-    /**
-     * 1. from A  ->  A <br/>
-     * 2. from A a  ->  a <br/>
-     * 3. from (select a from A) B  ->  null <br/>
-     * 获取 astMetaData 里物理表对应的view集合，临时表（子查询）会被过滤。
-     */
-    private Set<String> getPhysicalViewNameSet(SingleSelectAstMetaData astMetaData) {
-        // conditionColumnReference 的 Key 是 view，不是table
-        Map<String, Set<String>> conditionColumnReference = astMetaData.getConditionColumnReference();
-        Set<String> viewNameSet = new HashSet<>(conditionColumnReference.keySet());
-        viewNameSet.remove(AstMetaData.UNDETERMINED_TABLE);
-
-        // 查出来所有的不需要执行的
-        // key 是 view，value 是表
-        Map<String, Curd> aliasTableMap = astMetaData.getAliasTableMap();
-        Set<Map.Entry<String, Curd>> entries = aliasTableMap.entrySet();
-        for (Map.Entry<String, Curd> next : entries) {
-            // 如果 value 是子表，其对应的view（别名）是不需要计算条件的
-            if (!next.getValue().getClass().equals(Identifier.class)) {
-                viewNameSet.remove(next.getKey());
-            }
-        }
-        return viewNameSet;
     }
 
     private boolean checkIsOuterJoinQuery(SingleSelect singleSelect) {
