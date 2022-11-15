@@ -14,6 +14,14 @@ public class LogicalDeletionConvertorSelectTest {
 
     static String[] sqls = new String[]{
 
+            "select a, b"
+                    + "  from tab2 t cross join tab3 left join tab3 on tab4.e = tab2.e, (select * from tab5) t5\n"
+                    + " where t.m = ?\n"
+                    + "   and exists (select 1\n"
+                    + "                 from tab4 t4\n"
+                    + "                where t1.n = t4.n)\n"
+                    + "   and t.tm >= '2016-11-11'",
+
             "select count(*) as a from t_user where sqc = 1 limit 1 for update",
 
             "select * from t_a left join t_b on t_a.b_id = t_b.id " +
@@ -74,13 +82,6 @@ public class LogicalDeletionConvertorSelectTest {
                     + "where RELEASE.FLIGHT_ID = T.FLIGHT_ID\n"
                     + " and RELEASE.MODIFY_TM = T.LATEAST_TIME",
 
-            "select a, b"
-                    + "  from tab2 t cross join tab3 left join tab3 on tab4.e = tab2.e, (select * from tab5) t5\n"
-                    + " where t.m = ?\n"
-                    + "   and exists (select 1\n"
-                    + "                 from tab4 t4\n"
-                    + "                where t1.n = t4.n)\n"
-                    + "   and t.tm >= '2016-11-11'",
 
             "select SNO, SNAME, SBIRTHDAY, date_format(now(), 'yyyy') as anow from STUDENT \n" +
                     "where date_format(SBIRTHDAY, 'yyyy') = (select date_format(SBIRTHDAY, 'yyyy') as t from STUDENT where SNO = '108')",

@@ -7,6 +7,7 @@ import cn.addenda.ro.grammar.ast.retrieve.visitor.SelectVisitor;
 import cn.addenda.ro.grammar.lexical.token.Token;
 import cn.addenda.ro.grammar.lexical.token.TokenType;
 import cn.addenda.ro.grammar.util.ReflectUtils;
+import cn.addenda.ro.util.SqlAddConditionUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -45,40 +46,52 @@ class SelectAddDeleteConditionVisitor extends SelectVisitor<Curd> {
         TableSeg tableSeg = (TableSeg) singleSelect.getTableSeg();
         tableSeg.accept(this);
 
-        Curd deleteCondition;
-        if (checkIsOuterJoinQuery(singleSelect)) {
-            joinConditionAddDeleteCondition(tableSeg);
-            deleteCondition = LogicalDeletionConst.EQUAL_ZERO_OR_IS_NULL.deepClone();
-        } else {
-            deleteCondition = LogicalDeletionConst.EQUAL_ZERO.deepClone();
-        }
-
         SingleSelectAstMetaData astMetaData = (SingleSelectAstMetaData) tableSeg.getAstMetaData();
-        Set<String> physicalViewNameSet = getPhysicalViewNameSet(astMetaData);
-        Set<String> userDefinedViewNameSet = getAvailableViewName(astMetaData);
 
-        WhereSeg whereSeg = (WhereSeg) singleSelect.getWhereSeg();
-        // 对于不存在where条件的语法，修改singleSelect的whereSeg属性的值
-        if (whereSeg == null) {
-            Curd deleteLogic = createLogic(physicalViewNameSet, userDefinedViewNameSet, deleteCondition);
-            if (deleteLogic != null) {
-                whereSeg = new WhereSeg(deleteLogic);
-                ReflectUtils.setFieldValue(singleSelect, "whereSeg", whereSeg);
+        if (checkIsOuterJoinQuery(singleSelect)) {
+            Set<String> tableNameSet;
+            if (availableTableNameSet == null) {
+                tableNameSet = getPhysicalViewNameSet(astMetaData);
+            } else {
+                tableNameSet = new HashSet<>(availableTableNameSet);
             }
-        }
-        // 对于存在where条件的语法，修改whereSeg的logic属性的值
-        else {
-            whereSeg.accept(this);
-            Curd logic = whereSeg.getLogic();
-            whereSeg.accept(this);
-            Curd deleteLogic = createLogic(physicalViewNameSet, userDefinedViewNameSet, deleteCondition);
-            if (deleteLogic != null) {
-                deleteLogic = new Logic(logic, new Token(TokenType.AND, "and"), deleteLogic);
-                ReflectUtils.setFieldValue(whereSeg, "logic", deleteLogic);
+
+            for (String tableName : tableNameSet) {
+                SelectVisitor<Void> visitor = SqlAddConditionUtils.getSelectAddTableConditionVisitor(tableName, LogicalDeletionConst.EQUAL_ZERO.deepClone().toString());
+                singleSelect.accept(visitor);
             }
+
+            return singleSelect;
+        } else {
+            Curd deleteCondition = LogicalDeletionConst.EQUAL_ZERO.deepClone();
+
+            Set<String> physicalViewNameSet = getPhysicalViewNameSet(astMetaData);
+            Set<String> userDefinedViewNameSet = getAvailableViewName(astMetaData);
+
+            WhereSeg whereSeg = (WhereSeg) singleSelect.getWhereSeg();
+            // 对于不存在where条件的语法，修改singleSelect的whereSeg属性的值
+            if (whereSeg == null) {
+                Curd deleteLogic = createLogic(physicalViewNameSet, userDefinedViewNameSet, deleteCondition);
+                if (deleteLogic != null) {
+                    whereSeg = new WhereSeg(deleteLogic);
+                    ReflectUtils.setFieldValue(singleSelect, "whereSeg", whereSeg);
+                }
+            }
+            // 对于存在where条件的语法，修改whereSeg的logic属性的值
+            else {
+                whereSeg.accept(this);
+                Curd logic = whereSeg.getLogic();
+                whereSeg.accept(this);
+                Curd deleteLogic = createLogic(physicalViewNameSet, userDefinedViewNameSet, deleteCondition);
+                if (deleteLogic != null) {
+                    deleteLogic = new Logic(logic, new Token(TokenType.AND, "and"), deleteLogic);
+                    ReflectUtils.setFieldValue(whereSeg, "logic", deleteLogic);
+                }
+            }
+
+            return singleSelect;
         }
 
-        return singleSelect;
     }
 
 
@@ -104,74 +117,6 @@ class SelectAddDeleteConditionVisitor extends SelectVisitor<Curd> {
                 viewNameSet.remove(next.getKey());
             }
         }
-        return viewNameSet;
-    }
-
-    private void joinConditionAddDeleteCondition(TableSeg tableSeg) {
-        TableRep rightCurd = (TableRep) tableSeg.getRightCurd();
-        if (rightCurd != null) {
-            SingleSelectAstMetaData astMetaData = (SingleSelectAstMetaData) tableSeg.getAstMetaData();
-            Set<String> userDefinedViewNameSet = getAvailableViewName(astMetaData);
-
-            Set<String> physicalViewNameSet = new HashSet<>();
-            // 右孩子不为空，非叶子节点
-            Curd leftCurd = tableSeg.getLeftCurd();
-            Curd condition = tableSeg.getCondition();
-            if (leftCurd instanceof TableRep) {
-                String leftView = extractTableName((TableRep) leftCurd);
-                if (leftView != null) {
-                    physicalViewNameSet.add(leftView);
-                }
-            }
-            String rightView = extractTableName(rightCurd);
-            if (rightView != null) {
-                physicalViewNameSet.add(rightView);
-            }
-
-            if (condition == null) {
-                Curd deleteLogic = createLogic(physicalViewNameSet, userDefinedViewNameSet, LogicalDeletionConst.EQUAL_ZERO.deepClone());
-                if (deleteLogic != null) {
-                    ReflectUtils.setFieldValue(tableSeg, "condition", deleteLogic);
-                }
-            } else {
-                AstMetaData conditionAstMetaData = condition.getAstMetaData();
-                physicalViewNameSet.addAll(getConditionViewNameSet(conditionAstMetaData));
-                Curd deleteLogic = createLogic(physicalViewNameSet, userDefinedViewNameSet, LogicalDeletionConst.EQUAL_ZERO.deepClone());
-                if (deleteLogic != null) {
-                    deleteLogic = new Logic(condition, new Token(TokenType.AND, "and"), deleteLogic);
-                    ReflectUtils.setFieldValue(tableSeg, "condition", deleteLogic);
-                }
-            }
-
-        } else {
-            // 如果右孩子为空，则表示是叶子节点。
-            // 叶子节点不需要处理
-        }
-    }
-
-    private String extractTableName(TableRep tableRep) {
-        Token alias = tableRep.getAlias();
-
-        // curd 是 identifier 或者 select
-        Curd curd = tableRep.getCurd();
-
-        // 当 curd 是 Select 时，这个表不计算
-        if (curd instanceof Select) {
-            return null;
-        }
-
-        if (alias != null) {
-            return String.valueOf(alias.getLiteral());
-        }
-        Identifier table = (Identifier) tableRep.getCurd();
-        return String.valueOf(table.getName().getLiteral());
-    }
-
-    private Set<String> getConditionViewNameSet(AstMetaData astMetaData) {
-        // conditionColumnReference 的 Key 是 view，不是table
-        Map<String, Set<String>> conditionColumnReference = astMetaData.getConditionColumnReference();
-        Set<String> viewNameSet = new HashSet<>(conditionColumnReference.keySet());
-        viewNameSet.remove(AstMetaData.UNDETERMINED_TABLE);
         return viewNameSet;
     }
 
