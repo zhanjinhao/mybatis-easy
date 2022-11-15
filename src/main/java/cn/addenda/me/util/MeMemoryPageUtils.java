@@ -1,4 +1,4 @@
-package cn.addenda.me.utils;
+package cn.addenda.me.util;
 
 import cn.addenda.me.MyBatisEasyException;
 import com.github.pagehelper.Page;

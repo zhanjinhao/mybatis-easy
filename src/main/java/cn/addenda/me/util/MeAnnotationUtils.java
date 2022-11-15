@@ -1,4 +1,4 @@
-package cn.addenda.me.utils;
+package cn.addenda.me.util;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;

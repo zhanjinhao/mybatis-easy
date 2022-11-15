@@ -2,7 +2,7 @@ package cn.addenda.me.lockedselect.interceptor;
 
 import cn.addenda.me.lockedselect.LockedSelectException;
 import cn.addenda.me.lockedselect.LockedSelectHelper;
-import cn.addenda.me.utils.MybatisUtils;
+import cn.addenda.me.util.MybatisUtils;
 import org.apache.ibatis.cache.CacheKey;
 import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.mapping.BoundSql;

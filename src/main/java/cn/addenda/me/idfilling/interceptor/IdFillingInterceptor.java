@@ -4,7 +4,7 @@ import cn.addenda.me.idfilling.IdFillingException;
 import cn.addenda.me.idfilling.annotation.IdScope;
 import cn.addenda.me.idfilling.annotation.IdScopeController;
 import cn.addenda.me.idfilling.idgenerator.IdGenerator;
-import cn.addenda.me.utils.MeAnnotationUtils;
+import cn.addenda.me.util.MeAnnotationUtils;
 import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.plugin.Interceptor;
