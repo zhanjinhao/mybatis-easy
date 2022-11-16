@@ -30,7 +30,10 @@ import org.apache.ibatis.session.RowBounds;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Properties;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -104,19 +107,20 @@ public class FieldFillingInterceptor implements Interceptor {
             Curd parse = CurdUtils.parse(sql, functionEvaluator, true);
             Select select = (Select) parse;
             if (dqlFieldFilling == null) {
-                return fieldFillingConvertor.selectFieldFilling(select, tableNameSet);
+                return fieldFillingConvertor.selectFieldFilling(select, this.tableNameSet, null);
             }
             String[] aTableNameSet = dqlFieldFilling.tableNameSet();
+            String masterView = dqlFieldFilling.masterView();
             if (aTableNameSet.length == 1) {
                 String mode = aTableNameSet[0];
                 if (DQLFieldFilling.ALL.equals(mode)) {
-                    return fieldFillingConvertor.selectFieldFilling(select, this.tableNameSet);
+                    return fieldFillingConvertor.selectFieldFilling(select, this.tableNameSet, masterView);
                 } else if (DQLFieldFilling.EMPTY.equals(mode)) {
                     return null;
                 }
             }
             // 使用自定义的tableNameSet。
-            return fieldFillingConvertor.selectFieldFilling(select, new HashSet<>(Arrays.asList(aTableNameSet)));
+            return fieldFillingConvertor.selectFieldFilling(select, new HashSet<>(Arrays.asList(aTableNameSet)), masterView);
         } else {
             throw new FieldFillingException("Mybatis SqlCommandType.SELECT 应该执行 SELECT 语句！");
         }

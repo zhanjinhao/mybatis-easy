@@ -2,6 +2,7 @@ package cn.addenda.me.fieldfilling.sql;
 
 import cn.addenda.me.fieldfilling.FieldFillingException;
 import cn.addenda.me.fieldfilling.entity.BaseEntity;
+import cn.addenda.ro.grammar.ast.AstMetaData;
 import cn.addenda.ro.grammar.ast.expression.*;
 import cn.addenda.ro.grammar.ast.retrieve.*;
 import cn.addenda.ro.grammar.ast.retrieve.visitor.SelectVisitor;
@@ -20,6 +21,8 @@ class SelectReturnBaseEntityColumnVisitor extends SelectVisitor<List<ColumnRep>>
 
     private static final Set<String> COLUMN_NAME_SET = new HashSet<>();
     private static final List<ColumnRep> COLUMN_REP_LIST = new ArrayList<>();
+
+    private int deepth = 0;
 
     static {
         Class<BaseEntity> baseEntityClass = BaseEntity.class;
@@ -67,38 +70,47 @@ class SelectReturnBaseEntityColumnVisitor extends SelectVisitor<List<ColumnRep>>
      */
     private final Set<String> availableTableNameSet;
 
-    public SelectReturnBaseEntityColumnVisitor(Set<String> availableTableNameSet) {
+    private final String masterView;
+
+    public SelectReturnBaseEntityColumnVisitor(Set<String> availableTableNameSet, String masterView) {
         this.availableTableNameSet = availableTableNameSet;
         if (this.availableTableNameSet != null) {
             this.availableTableNameSet.remove("dual");
         }
+        this.masterView = masterView;
     }
 
     @Override
     public List<ColumnRep> visitSelect(Select select) {
-        List<ColumnRep> tokenList = new ArrayList<>(nullAccept(select.getLeftCurd()));
-        List<ColumnRep> rightTokenList = nullAccept(select.getRightCurd());
-        if (rightTokenList == null) {
-            return tokenList;
-        }
-        if (rightTokenList.size() != tokenList.size()) {
-            clearColumnRep((SingleSelect) select.getLeftCurd());
-            clearColumnRep((SingleSelect) select.getRightCurd());
-            return new ArrayList<>();
-        }
+        deepth++;
+        try {
 
-        int size = rightTokenList.size();
-        for (int i = 0; i < size; i++) {
-            ColumnRep leftColumnRep = tokenList.get(i);
-            ColumnRep rightColumnRep = rightTokenList.get(i);
-            if (!String.valueOf(leftColumnRep.getOperator().getLiteral()).equals(String.valueOf(rightColumnRep.getOperator().getLiteral()))) {
+            List<ColumnRep> tokenList = new ArrayList<>(nullAccept(select.getLeftCurd()));
+            List<ColumnRep> rightTokenList = nullAccept(select.getRightCurd());
+            if (rightTokenList == null) {
+                return tokenList;
+            }
+            if (rightTokenList.size() != tokenList.size()) {
                 clearColumnRep((SingleSelect) select.getLeftCurd());
                 clearColumnRep((SingleSelect) select.getRightCurd());
                 return new ArrayList<>();
             }
+
+            int size = rightTokenList.size();
+            for (int i = 0; i < size; i++) {
+                ColumnRep leftColumnRep = tokenList.get(i);
+                ColumnRep rightColumnRep = rightTokenList.get(i);
+                if (!String.valueOf(leftColumnRep.getOperator().getLiteral()).equals(String.valueOf(rightColumnRep.getOperator().getLiteral()))) {
+                    clearColumnRep((SingleSelect) select.getLeftCurd());
+                    clearColumnRep((SingleSelect) select.getRightCurd());
+                    return new ArrayList<>();
+                }
+            }
+            select.reSetAstMetaData();
+            return tokenList;
+        } finally {
+            deepth--;
         }
-        select.reSetAstMetaData();
-        return tokenList;
     }
 
     private void clearColumnRep(SingleSelect singleSelect) {
@@ -139,11 +151,51 @@ class SelectReturnBaseEntityColumnVisitor extends SelectVisitor<List<ColumnRep>>
             injectedColumnList = singleSelect.getTableSeg().accept(this);
         }
 
+        if (deepth == 1) {
+            String aMasterView;
+            if (masterView == null) {
+                singleSelect.reSetAstMetaData();
+                aMasterView = analyzeMasterView((SingleSelectAstMetaData) singleSelect.getAstMetaData());
+            } else {
+                aMasterView = masterView;
+            }
+
+            if (aMasterView != null) {
+                for (int i = 0; i < injectedColumnList.size(); i++) {
+                    ColumnRep columnRep = injectedColumnList.get(i);
+                    String alias = String.valueOf(columnRep.getOperator().getLiteral());
+                    if (!alias.startsWith(aMasterView)) {
+                        continue;
+                    }
+                    for (String columnName : COLUMN_NAME_SET) {
+                        if (alias.endsWith(columnName)) {
+                            ColumnRep replacement = new ColumnRep(columnRep.getCurd(), new Token(TokenType.STRING, columnName));
+                            injectedColumnList.set(i, replacement);
+                        }
+                    }
+                }
+            }
+        }
+
         if (!injectedColumnList.isEmpty()) {
             columnRepList.addAll(injectedColumnList);
         }
-
         return injectedColumnList;
+    }
+
+    private String analyzeMasterView(SingleSelectAstMetaData singleSelectAmd) {
+        Set<String> viewNameSet = singleSelectAmd.getJoinColumnReference().keySet();
+
+        if (viewNameSet.size() != 2) {
+            return null;
+        }
+        for (String item : viewNameSet) {
+            if (!AstMetaData.UNDETERMINED_TABLE.equals(item)) {
+                return item;
+            }
+        }
+
+        throw new FieldFillingException("unexpected error. ");
     }
 
     @Override

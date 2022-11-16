@@ -9,6 +9,13 @@ import cn.addenda.ro.grammar.function.evaluator.DefaultFunctionEvaluator;
 public class FieldFillingConvertorSelectTest {
 
     static String[] sqls = new String[]{
+
+            "select a from A join B group by A.creator, B.creator ",
+
+            "select a from A join B group by A.creator, B.creator union select a from A join C group by C.creator, B.creator",
+
+            "select ab.a, ab.b from (select a, b from A join B where A.oid = B.oid) ab join (select c, d from C join D where C.oid = D.oid) cd",
+
             "        SELECT 1\n" +
                     "        FROM t_user\n" +
                     "        WHERE user_id = #{userId,jdbcType=VARCHAR}\n" +
@@ -18,15 +25,10 @@ public class FieldFillingConvertorSelectTest {
 
             "select a from (select a from A) aa where a > 100 and a < 50",
 
-            "select ab.a, ab.b from (select a, b from A join B where A.oid = B.oid) ab join (select c, d from C join D where C.oid = D.oid) cd",
-
             "select ts_user.user_name from ts_user join ts_role on ts_user.user_id = ts_role.create_user " +
                     "where (select c.a from (select 1 as a from dual) c) > ts_role.a and (select c.a from (select true as a from dual) c) ",
 
             "select a from A join B group by A.creator, B.creator",
-
-            "select a from A join B group by A.creator, B.creator union select a from A join C group by C.creator, B.creator",
-
 
             "select a from (select a from A) aa where a > 100 and a < 50",
 
@@ -248,7 +250,7 @@ public class FieldFillingConvertorSelectTest {
     private static void test() {
         FieldFillingConvertor fieldFillingConvertor = new FieldFillingConvertor(DefaultFunctionEvaluator.getInstance());
         for (String sql : sqls) {
-            System.out.println(fieldFillingConvertor.selectFieldFilling(sql));
+            System.out.println(fieldFillingConvertor.selectFieldFilling(sql, "cd"));
         }
     }
 

@@ -104,7 +104,4 @@ SQL解析器是个人开发的，运行此项目需要加入依赖。
 
 # todo
 
-1、增加窗口函数。
-2、增加group_concat()语法。
-3、增加 for update、lock in share mode语法。
-4、toString() 增加分隔符为''的输出。
+1、

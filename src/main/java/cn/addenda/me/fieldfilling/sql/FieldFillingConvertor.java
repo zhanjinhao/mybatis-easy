@@ -25,32 +25,32 @@ public class FieldFillingConvertor {
         this.functionEvaluator = functionEvaluator;
     }
 
-    public String selectFieldFilling(String sql) {
+    public String selectFieldFilling(String sql, String masterView) {
         Curd parse = CurdUtils.parse(sql, functionEvaluator, true);
         if (!(parse instanceof Select)) {
             return parse.toString();
         }
 
-        return selectFieldFilling((Select) parse);
+        return selectFieldFilling((Select) parse, masterView);
     }
 
-    public String selectFieldFilling(Select select) {
-        select.accept(new SelectReturnBaseEntityColumnVisitor(null));
+    public String selectFieldFilling(Select select, String masterView) {
+        select.accept(new SelectReturnBaseEntityColumnVisitor(null, masterView));
         select.reSetAstMetaData();
         return select.toString();
     }
 
-    public String selectFieldFilling(String sql, Set<String> tableNameSet) {
+    public String selectFieldFilling(String sql, Set<String> tableNameSet, String masterView) {
         Curd parse = CurdUtils.parse(sql, functionEvaluator, true);
         if (!(parse instanceof Select)) {
             return parse.toString();
         }
 
-        return selectFieldFilling((Select) parse, tableNameSet);
+        return selectFieldFilling((Select) parse, tableNameSet, masterView);
     }
 
-    public String selectFieldFilling(Select select, Set<String> tableNameSet) {
-        select.accept(new SelectReturnBaseEntityColumnVisitor(tableNameSet));
+    public String selectFieldFilling(Select select, Set<String> tableNameSet, String masterView) {
+        select.accept(new SelectReturnBaseEntityColumnVisitor(tableNameSet, masterView));
         select.reSetAstMetaData();
         return select.toString();
     }
