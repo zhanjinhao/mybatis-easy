@@ -111,6 +111,10 @@ public class FieldFillingInterceptor implements Interceptor {
             }
             String[] aTableNameSet = dqlFieldFilling.tableNameSet();
             String masterView = dqlFieldFilling.masterView();
+            // java注解不允许空，所以这里转换一下
+            if ("".equals(masterView)) {
+                masterView = null;
+            }
             if (aTableNameSet.length == 1) {
                 String mode = aTableNameSet[0];
                 if (DQLFieldFilling.ALL.equals(mode)) {

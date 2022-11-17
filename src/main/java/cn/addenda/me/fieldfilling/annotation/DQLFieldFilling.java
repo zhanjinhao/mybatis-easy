@@ -19,6 +19,6 @@ public @interface DQLFieldFilling {
 
     String[] tableNameSet() default ALL;
 
-    String masterView();
+    String masterView() default "";
 
 }
