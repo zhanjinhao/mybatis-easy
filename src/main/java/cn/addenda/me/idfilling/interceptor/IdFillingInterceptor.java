@@ -7,6 +7,7 @@ import cn.addenda.me.idfilling.idgenerator.IdGenerator;
 import cn.addenda.me.util.MeAnnotationUtils;
 import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.mapping.MappedStatement;
+import org.apache.ibatis.mapping.SqlCommandType;
 import org.apache.ibatis.plugin.Interceptor;
 import org.apache.ibatis.plugin.Intercepts;
 import org.apache.ibatis.plugin.Invocation;
@@ -16,7 +17,10 @@ import org.apache.ibatis.reflection.SystemMetaObject;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -44,6 +48,10 @@ public class IdFillingInterceptor implements Interceptor {
         Object parameterObject = args[1];
 
         String msId = ms.getId();
+
+        if (!SqlCommandType.INSERT.equals(ms.getSqlCommandType())) {
+            return invocation.proceed();
+        }
 
         // IdScopeController可以压制注入ID
         IdScopeController idScopeController = extractIdScopeController(msId);
