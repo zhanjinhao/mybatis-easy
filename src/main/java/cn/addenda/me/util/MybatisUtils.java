@@ -92,11 +92,11 @@ public class MybatisUtils {
         BoundSql boundSql = getBoundSql(invocation);
 
         MybatisUtils.boundSqlSetSql(boundSql, newSql);
-        SqlSource newSqlSource = MybatisUtils.newBoundSqlSqlSource(boundSql);
+        SqlSource newSqlSource = newBoundSqlSqlSource(boundSql);
 
         final Object[] args = invocation.getArgs();
         // Interceptor 拦截到的 ms 是同一个对象，
-        // 这里需要clone一份，再进行属性替换。否则会影响到其他的执行。
+        // 这里需要clone一份，再进行属性替换。否则会影响到其他线程的执行。
         MappedStatement statement = cloneMappedStatement((MappedStatement) args[0]);
         MetaObject msObject = SystemMetaObject.forObject(statement);
         msObject.setValue("sqlSource", newSqlSource);
