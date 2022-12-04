@@ -1,5 +1,6 @@
 package cn.addenda.me.fieldfilling.interceptor;
 
+import cn.addenda.me.constant.Constants;
 import cn.addenda.me.fieldfilling.DefaultFieldFillingContext;
 import cn.addenda.me.fieldfilling.FieldFillingContext;
 import cn.addenda.me.fieldfilling.FieldFillingException;
@@ -117,9 +118,9 @@ public class FieldFillingInterceptor implements Interceptor {
             }
             if (aTableNameSet.length == 1) {
                 String mode = aTableNameSet[0];
-                if (DQLFieldFilling.ALL.equals(mode)) {
+                if (Constants.ALL.equals(mode)) {
                     return fieldFillingConvertor.selectFieldFilling(select, this.tableNameSet, masterView);
-                } else if (DQLFieldFilling.EMPTY.equals(mode)) {
+                } else if (Constants.EMPTY.equals(mode)) {
                     return null;
                 }
             }

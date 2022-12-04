@@ -9,6 +9,7 @@ import cn.addenda.ro.grammar.function.evaluator.DefaultFunctionEvaluator;
 public class LogicalDeletionConvertorDeleteTest {
 
     static String[] sqls = new String[]{
+            "delete from t_user_role where user_sqc = ?",
             "delete from score where CREATE_TM < date_add(now(), interval 1 day) and DEGREE + 1 < 60 - 1",
             "delete from score where DEGREE < 50",
             "delete from score where CREATE_TM < now()",
