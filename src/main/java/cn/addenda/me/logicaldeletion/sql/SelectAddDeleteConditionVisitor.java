@@ -159,7 +159,7 @@ class SelectAddDeleteConditionVisitor extends SelectVisitor<Curd> {
         for (String tableName : physicalViewNameSet) {
             if (userDefinedViewNameSet == null || userDefinedViewNameSet.contains(tableName)) {
                 Curd deepClone = deleteCondition.deepClone();
-                deepClone.fillTableName(tableName);
+                deepClone.fieldAddPrefix(tableName);
                 if (result == null) {
                     result = deepClone;
                 } else {
