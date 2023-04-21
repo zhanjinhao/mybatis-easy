@@ -59,7 +59,7 @@ public class LogicalDeletionConvertor {
             List<Token> columnList = insertValuesRep.getColumnList();
             columnList.add(LogicalDeletionConst.DELETE_TOKEN);
         }
-        insert.reSetAstMetaData();
+        insert.reDetectAstMetaData();
         return insert.toString();
     }
 
@@ -86,7 +86,7 @@ public class LogicalDeletionConvertor {
                     new Token(TokenType.AND, "and"), LogicalDeletionConst.EQUAL_ZERO.deepClone()));
         }
         Update update = new Update(tableName, new AssignmentList(entryList), whereSeg);
-        update.reSetAstMetaData();
+        update.reDetectAstMetaData();
         return update.toString();
     }
 
@@ -100,7 +100,7 @@ public class LogicalDeletionConvertor {
 
     public String selectLogically(Select select) {
         Curd accept = select.accept(new SelectAddDeleteConditionVisitor());
-        accept.reSetAstMetaData();
+        accept.reDetectAstMetaData();
         return accept.toString();
     }
 
@@ -115,7 +115,7 @@ public class LogicalDeletionConvertor {
 
     public String selectLogically(Select select, Set<String> tableNameSet) {
         Curd accept = select.accept(new SelectAddDeleteConditionVisitor(tableNameSet));
-        accept.reSetAstMetaData();
+        accept.reDetectAstMetaData();
         return accept.toString();
     }
 
@@ -137,7 +137,7 @@ public class LogicalDeletionConvertor {
             logic = new Logic(logic, new Token(TokenType.AND, "and"), LogicalDeletionConst.EQUAL_ZERO.deepClone());
             ReflectUtils.setFieldValue(whereSeg, "logic", logic);
         }
-        update.reSetAstMetaData();
+        update.reDetectAstMetaData();
         return update.toString();
     }
 

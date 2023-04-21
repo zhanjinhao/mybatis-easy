@@ -106,7 +106,7 @@ class SelectReturnBaseEntityColumnVisitor extends SelectVisitor<List<ColumnRep>>
                     return new ArrayList<>();
                 }
             }
-            select.reSetAstMetaData();
+            select.reDetectAstMetaData();
             return tokenList;
         } finally {
             deepth--;
@@ -154,7 +154,7 @@ class SelectReturnBaseEntityColumnVisitor extends SelectVisitor<List<ColumnRep>>
         if (deepth == 1) {
             String aMasterView;
             if (masterView == null) {
-                singleSelect.reSetAstMetaData();
+                singleSelect.reDetectAstMetaData();
                 aMasterView = analyzeMasterView((SingleSelectAstMetaData) singleSelect.getAstMetaData());
             } else {
                 aMasterView = masterView;

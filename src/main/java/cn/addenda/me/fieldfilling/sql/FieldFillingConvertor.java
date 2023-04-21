@@ -36,7 +36,7 @@ public class FieldFillingConvertor {
 
     public String selectFieldFilling(Select select, String masterView) {
         select.accept(new SelectReturnBaseEntityColumnVisitor(null, masterView));
-        select.reSetAstMetaData();
+        select.reDetectAstMetaData();
         return select.toString();
     }
 
@@ -51,7 +51,7 @@ public class FieldFillingConvertor {
 
     public String selectFieldFilling(Select select, Set<String> tableNameSet, String masterView) {
         select.accept(new SelectReturnBaseEntityColumnVisitor(tableNameSet, masterView));
-        select.reSetAstMetaData();
+        select.reDetectAstMetaData();
         return select.toString();
     }
 
@@ -113,7 +113,7 @@ public class FieldFillingConvertor {
                 columnList.add(FilledFillingConst.REMARK_TOKEN);
             }
         }
-        insert.reSetAstMetaData();
+        insert.reDetectAstMetaData();
         return insert.toString();
     }
 
@@ -137,7 +137,7 @@ public class FieldFillingConvertor {
         if (remark != null) {
             entryList.add(new AssignmentList.Entry(FilledFillingConst.REMARK_TOKEN, newLiteral(TokenType.STRING, remark)));
         }
-        update.reSetAstMetaData();
+        update.reDetectAstMetaData();
         return update.toString();
     }
 
