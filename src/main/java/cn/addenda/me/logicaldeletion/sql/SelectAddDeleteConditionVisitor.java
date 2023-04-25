@@ -36,7 +36,7 @@ class SelectAddDeleteConditionVisitor extends SelectVisitor<Curd> {
         if (rightCurd != null) {
             rightCurd.accept(this);
         }
-        select.reSetAstMetaData();
+        select.reDetectAstMetaData();
         return select;
     }
 
